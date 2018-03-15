@@ -7,7 +7,7 @@
 Zone::Zone(void){
   z_number = 0;
   z_pin = 0;
-  z_name = "             ";
+  //z_name = "             ";
   z_run_time = 0;
   z_is_dry_value = 0;
   z_storebits = 0;
