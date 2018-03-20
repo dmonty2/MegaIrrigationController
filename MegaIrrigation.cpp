@@ -4,7 +4,7 @@
 #include "MegaIrrigation.h"
 
 // constructor
-Zone::Zone(void){
+Zone::Zone(){
   number = 0;
   pin = 0;
   //name = "             ";
@@ -17,32 +17,37 @@ Zone::Zone(void){
   rambits = 0;
 }
 
-void Zone::water_on(void){
-  bitSet(rambits,IS_ON);
+void Zone::readConfig(){
+  //EEPROM_LOCAL_CONFIG_ADDRESS
+  
 }
 
-void Zone::loadConfig(){
+void Zone::updateConfig(){
   //EEPROM_LOCAL_CONFIG_ADDRESS
 }
 
-void Zone::water_off(void){
-  bitClear(rambits,IS_ON);
+void Zone::water_on(){
+  bitSet(rambits,RB_IS_ON);
 }
 
-void Zone::wind_sensor_on(void){
-  bitSet(storebits,USE_WIND);
+void Zone::water_off(){
+  bitClear(rambits,RB_IS_ON);
+}
+
+void Zone::wind_sensor_on(){
+  bitSet(storebits,SB_USE_WIND);
 }
 
 void Zone::wind_sensor_off(void){
-  bitClear(storebits,USE_WIND);
+  bitClear(storebits,SB_USE_WIND);
 }
 
 
 Irrigation::Irrigation(uint8_t num_zones){
-  Zone zone[num_zones - 1];
-  for (uint8_t i; i<num_zones; i++){
-    zone[i].number = i+1;
-  }
+  //Zone zone[num_zones - 1];
+  //for (uint8_t i; i<num_zones; i++){
+  //  zone[i].number = i+1;
+  //}
 
 }
 

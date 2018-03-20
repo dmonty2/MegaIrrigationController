@@ -23,7 +23,7 @@ unsigned long currentMillis = millis(); // define here so it does not redefine i
 unsigned long previousMillis = 0;
 unsigned long previousDebounce = 0;
 unsigned long previousOffMillis = 0; // countdown power off timer
-irrigation Irrigation(NUM_ZONES);
+Irrigation irrigation(NUM_ZONES);
 
 void presentation()
 {
@@ -35,7 +35,6 @@ void presentation()
   //present(1, S_LIGHT,"Zone1", true);
   //wait(LONG_WAIT);
 }
-
 
 void setup(){
   
