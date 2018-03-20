@@ -5,36 +5,44 @@
 
 // constructor
 Zone::Zone(void){
-  z_number = 0;
-  z_pin = 0;
-  //z_name = "             ";
-  z_run_time = 0;
-  z_is_dry_value = 0;
-  z_storebits = 0;
-  z_moisture_id = 0;
-  z_previous_moisture = 0;
-  z_current_moisture = 0;
-  z_rambits = 0;
+  number = 0;
+  pin = 0;
+  //name = "             ";
+  run_time = 0;
+  is_dry_value = 0;
+  storebits = 0;
+  moisture_id = 0;
+  previous_moisture = 0;
+  current_moisture = 0;
+  rambits = 0;
 }
 
 void Zone::water_on(void){
-  bitSet(z_rambits,IS_ON);
+  bitSet(rambits,IS_ON);
+}
+
+void Zone::loadConfig(){
+  //EEPROM_LOCAL_CONFIG_ADDRESS
 }
 
 void Zone::water_off(void){
-  bitClear(z_rambits,IS_ON);
+  bitClear(rambits,IS_ON);
 }
 
 void Zone::wind_sensor_on(void){
-  bitSet(z_storebits,USE_WIND);
+  bitSet(storebits,USE_WIND);
 }
 
 void Zone::wind_sensor_off(void){
-  bitClear(z_storebits,USE_WIND);
+  bitClear(storebits,USE_WIND);
 }
 
 
-Irrigation::Irrigation(void){
+Irrigation::Irrigation(uint8_t num_zones){
+  Zone zone[num_zones - 1];
+  for (uint8_t i; i<num_zones; i++){
+    zone[i].number = i+1;
+  }
 
 }
 
