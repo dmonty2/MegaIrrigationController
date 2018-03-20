@@ -15,6 +15,9 @@ Zone::Zone(){
   previous_moisture = 0;
   current_moisture = 0;
   rambits = 0;
+  for (uint8_t i; i<14; i++){
+    name[i] = ' ';
+  }
 }
 
 void Zone::readConfig(){
@@ -35,19 +38,19 @@ void Zone::water_off(){
 }
 
 void Zone::wind_sensor_on(){
-  bitSet(storebits,SB_USE_WIND);
+  bitSet(storebits,SBZ_USE_WIND);
 }
 
 void Zone::wind_sensor_off(void){
-  bitClear(storebits,SB_USE_WIND);
+  bitClear(storebits,SBZ_USE_WIND);
 }
 
 
 Irrigation::Irrigation(uint8_t num_zones){
-  //Zone zone[num_zones - 1];
-  //for (uint8_t i; i<num_zones; i++){
-  //  zone[i].number = i+1;
-  //}
+  Zone zone[num_zones - 1];
+  for (uint8_t i; i<num_zones; i++){
+    zone[i].number = i+1;
+  }
 
 }
 
