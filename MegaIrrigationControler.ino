@@ -4,12 +4,18 @@
  * Date: March 19, 2018
  */
 
+#include <hd44780.h>
+const int rs=8, en=9, db4=4, db5=5, db6=6, db7=7, bl=10, blLevel=HIGH;
+hd44780_pinIO lcd(rs, en, db4, db5, db6, db7, bl, blLevel);
 //#define MY_DEBUG
-#define MY_RF24_IRQ_PIN 3
+#define MY_RF24_CE_PIN 49
+#define MY_RF24_CS_PIN 53
+//#define MY_RF24_IRQ_PIN 3
 #define MY_RADIO_NRF24
+//#define IRR_MEM_START 413
 #include <MySensors.h>
+//#define IRR_MEM_START EEPROM_LOCAL_CONFIG_ADDRESS
 #include "MegaIrrigation.h"
-
 //
 #define NUM_ZONES 5
 
@@ -41,4 +47,9 @@ void setup(){
 
 void loop(){
 
+}
+
+void backlightOff(){
+  lcd.noBacklight();
+  lcd.backlight();
 }
