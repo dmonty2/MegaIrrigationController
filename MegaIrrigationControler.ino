@@ -4,7 +4,10 @@
  * Date: March 19, 2018
  */
 
+#define NUM_ZONES 5
+
 #include <hd44780.h>
+#include <hd44780ioClass/hd44780_pinIO.h>
 const int rs=8, en=9, db4=4, db5=5, db6=6, db7=7, bl=10, blLevel=HIGH;
 hd44780_pinIO lcd(rs, en, db4, db5, db6, db7, bl, blLevel);
 //#define MY_DEBUG
@@ -16,7 +19,6 @@ hd44780_pinIO lcd(rs, en, db4, db5, db6, db7, bl, blLevel);
 #include <MySensors.h>
 #include "MegaIrrigation.h"
 //
-#define NUM_ZONES 5
 
 
 // MySensors

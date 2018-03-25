@@ -17,8 +17,9 @@
 
 #define IRRIGATION_VERSION 1
 
-#include <avr/eeprom.h>
-#include <avr/pgmspace.h>
+#include <EEPROMex.h>
+//#include <avr/eeprom.h>
+//#include <avr/pgmspace.h>
 
 
 // Start of eeprom is stored in EEPROM_LOCAL_CONFIG_ADDRESS
@@ -62,10 +63,12 @@
 // Ram bits Zone
 #define RBZ_IS_ON 0
 
-#define hwReadConfig(__pos) eeprom_read_byte((uint8_t*)(__pos))
-#define hwWriteConfig(__pos, __val) eeprom_update_byte((uint8_t*)(__pos), (__val))
-#define hwReadConfigBlock(__buf, __pos, __length) eeprom_read_block((void*)(__buf), (void*)(__pos), (__length))
-#define hwWriteConfigBlock(__buf, __pos, __length) eeprom_update_block((void*)(__buf), (void*)(__pos), (__length))
+//#define hwReadConfig(__pos) eeprom_read_byte((uint8_t*)(__pos))
+//#define hwWriteConfig(__pos, __val) eeprom_update_byte((uint8_t*)(__pos), (__val))
+//#define hwReadConfigBlock(__buf, __pos, __length) eeprom_read_block((void*)(__buf), (void*)(__pos), (__length))
+//#define hwWriteConfigBlock(__buf, __pos, __length) eeprom_update_block((void*)(__buf), (void*)(__pos), (__length))
+
+uint16_t eeprom_start = 0; // Start of EEPROM
 
 /// A watering zone
 class Zone {
@@ -118,7 +121,6 @@ class Irrigation {
     uint8_t master_valve_pin = 0;  // Pin for master valve
     uint8_t rain_sensor_pin = 0;   // Pin for rain sensor.
     uint16_t wind_id;              // MySensor ID for wind.
-    uint16_t eeprom_start;         // Start of EEPROM
     Irrigation(uint8_t num_zones, uint16_t eeprom_st);
     void run_all_zones(void);
     void run_one_zone(uint8_t zn);
