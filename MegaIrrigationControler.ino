@@ -12,9 +12,8 @@ hd44780_pinIO lcd(rs, en, db4, db5, db6, db7, bl, blLevel);
 #define MY_RF24_CS_PIN 53
 //#define MY_RF24_IRQ_PIN 3
 #define MY_RADIO_NRF24
-//#define IRR_MEM_START 413
+#define MY_TRANSPORT_WAIT_READY_MS 10000
 #include <MySensors.h>
-//#define IRR_MEM_START EEPROM_LOCAL_CONFIG_ADDRESS
 #include "MegaIrrigation.h"
 //
 #define NUM_ZONES 5
@@ -28,7 +27,8 @@ unsigned long currentMillis = millis(); // define here so it does not redefine i
 unsigned long previousMillis = 0;
 unsigned long previousDebounce = 0;
 unsigned long previousOffMillis = 0; // countdown power off timer
-Irrigation irrigation(NUM_ZONES);
+// Innitiate with number of zones and start of MySensors Epprom space.
+Irrigation irrigation(NUM_ZONES,EEPROM_LOCAL_CONFIG_ADDRESS);
 
 void presentation()
 {

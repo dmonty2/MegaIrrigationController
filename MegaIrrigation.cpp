@@ -24,34 +24,36 @@ Zone::Zone(){
 }
 
 void Zone::readConfig(){
-  storebits = hwReadConfig(ZONE_STORE_BITS);
-  pin = hwReadConfig(ZONE_PIN);
-  hwReadConfigBlock((void*)&name, (void*)ZONE_NAME,
+  uint16_t eeprom_offset = eeprom_start + ((number - 1) * ZONE_EEPROM_SPACE)
+  storebits = hwReadConfig(ZONE_STORE_BITS + eeprom_offset);
+  pin = hwReadConfig(ZONE_PIN + eeprom_offset);
+  hwReadConfigBlock((void*)&name, (void*)(ZONE_NAME + eeprom_offset),
                           sizeof(name));
   run_time = hwReadConfig(ZONE_RUNTIME);
-  hwReadConfigBlock((void*)&blowout_time, (void*)ZONE_BLOWOUT_TIME,
+  hwReadConfigBlock((void*)&blowout_time, (void*)ZONE_BLOWOUT_TIME + eeprom_offset,
                           sizeof(blowout_time));
-  blow_cycles = hwReadConfig(ZONE_BLOWOUT_CYCLES);
-  hwReadConfigBlock((void*)&is_dry_value, (void*)ZONE_IS_DRY_VALUE,
+  blow_cycles = hwReadConfig(ZONE_BLOWOUT_CYCLES + eeprom_offset);
+  hwReadConfigBlock((void*)&is_dry_value, (void*)ZONE_IS_DRY_VALUE + eeprom_offset,
                           sizeof(is_dry_value));
-  hwReadConfigBlock((void*)&moisture_id, (void*)ZONE_MOISTURE_ID,
+  hwReadConfigBlock((void*)&moisture_id, (void*)ZONE_MOISTURE_ID + eeprom_offset,
                           sizeof(moisture_id));
 }
 
 void Zone::updateConfig(){
-  hwWriteConfig(ZONE_NUM,(uint8_t)number);
-  hwWriteConfig(ZONE_STORE_BITS,(uint8_t)storebits);
-  hwWriteConfig(ZONE_PIN,(uint8_t)pin);
-  hwWriteConfigBlock((void*)name, (void*)ZONE_NAME,
+  uint16_t eeprom_offset = eeprom_start + ((number - 1) * ZONE_EEPROM_SPACE)
+  hwWriteConfig(ZONE_NUM + eeprom_offset,(uint8_t)number);
+  hwWriteConfig(ZONE_STORE_BITS + eeprom_offset,(uint8_t)storebits);
+  hwWriteConfig(ZONE_PIN + eeprom_offset,(uint8_t)pin);
+  hwWriteConfigBlock((void*)name, (void*)ZONE_NAME + eeprom_offset,
                            sizeof(name));
-  hwWriteConfigBlock((void*)run_time, (void*)ZONE_RUNTIME,
+  hwWriteConfigBlock((void*)run_time, (void*)ZONE_RUNTIME + eeprom_offset,
                            sizeof(run_time));
-  hwWriteConfigBlock((void*)blowout_time, (void*)ZONE_BLOWOUT_TIME,
+  hwWriteConfigBlock((void*)blowout_time, (void*)ZONE_BLOWOUT_TIME + eeprom_offset,
                            sizeof(blowout_time));
-  hwWriteConfig(ZONE_BLOWOUT_CYCLES,(uint8_t)blow_cycles);
-  hwWriteConfigBlock((void*)is_dry_value, (void*)ZONE_IS_DRY_VALUE,
+  hwWriteConfig(ZONE_BLOWOUT_CYCLES + eeprom_offset,(uint8_t)blow_cycles);
+  hwWriteConfigBlock((void*)is_dry_value, (void*)ZONE_IS_DRY_VALUE + eeprom_offset,
                            sizeof(is_dry_value));
-  hwWriteConfigBlock((void*)moisture_id, (void*)ZONE_MOISTURE_ID,
+  hwWriteConfigBlock((void*)moisture_id, (void*)ZONE_MOISTURE_ID + eeprom_offset,
                            sizeof(moisture_id));
 }
 
@@ -72,7 +74,8 @@ void Zone::wind_sensor_off(void){
 }
 
 
-Irrigation::Irrigation(uint8_t num_zones){
+Irrigation::Irrigation(uint8_t num_zones, uint16_t eeprom_st){
+  eeprom_start = eeprom_st;
   Zone zone[num_zones - 1];
   for (uint8_t i; i<num_zones; i++){
     zone[i].number = i+1;

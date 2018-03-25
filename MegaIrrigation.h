@@ -19,31 +19,31 @@
 
 #include <avr/eeprom.h>
 #include <avr/pgmspace.h>
-#include "MyEepromAddresses.h"
+
+
+// Start of eeprom is stored in EEPROM_LOCAL_CONFIG_ADDRESS
 //#include "../libraries/MySensors/core/MyEepromAddresses.h"
-
-
-// Map EEPROM store memory start:  last store + last store size.
-#define IRR_MEM_START EEPROM_LOCAL_CONFIG_ADDRESS
-#define IRR_VERSION IRR_MEM_START              // uint8_t
+// eeprom arangement will be offset by above.
+#define IRR_VERSION 0                          // uint8_t
 #define IRR_STORE_BITS (IRR_VERSION + 1)       // uint8_t
 #define IRR_NUM_ZONES (IRR_STORE_BITS + 1)     // uint8_t
 #define IRR_MASTER_VALVE_PIN (IRR_NUM_ZONES + 1)   // uint8_t
 #define IRR_RAIN_SESNOR_PIN (IRR_MASTER_VALVE_PIN + 1) // uint8_t
-#define IRR_WIND_ID (IRR_RAIN_SESNOR_PIN + 1) // uing16_t
-// TODO: add some space.
-#define ZONE_MEM_START (IRR_WIND_ID + 2 + 5)  // 5 bits space
-#define ZONE_NUM ZONE_MEM_START  // uint8_t
+#define IRR_WIND_ID (IRR_RAIN_SESNOR_PIN + 1)   // uing16_t
+// With spare (5 bytes).
+#define IRR_EEPROM_BYTES  12 // EEPROM Bytes needed for IRR_*
+
+#define ZONE_NUM 0                     // uint8_t
 #define ZONE_STORE_BITS (ZONE_NUM + 1) // uint8_t
 #define ZONE_PIN (ZONE_STORE_BITS + 1) // uint8_t
-#define ZONE_NAME (ZONE_PIN + 1) // char[15]
-#define ZONE_RUNTIME (ZONE_NAME + 15) //uint8_t (store in mintues)
-#define ZONE_BLOWOUT_TIME (ZONE_RUNTIME + 2) // uint16_t (store in seconds)
+#define ZONE_NAME (ZONE_PIN + 1)       // char[15]
+#define ZONE_RUNTIME (ZONE_NAME + 15)  // uint8_t (store in mintues)
+#define ZONE_BLOWOUT_TIME (ZONE_RUNTIME + 2)        // uint16_t (store in seconds)
 #define ZONE_BLOWOUT_CYCLES (ZONE_BLOWOUT_TIME + 2) // uint8_t
 #define ZONE_IS_DRY_VALUE (ZONE_BLOWOUT_CYCLES + 1) // uint16_t
-#define ZONE_MOISTURE_ID (ZONE_IS_DRY_VALUE + 2) // uint16_t
-
-
+#define ZONE_MOISTURE_ID (ZONE_IS_DRY_VALUE + 2)    // uint16_t
+// With spare (4 bytes)
+#define ZONE_EEPROM_BYTES 30 // EEPROM Bytes needed for each zone;
 
 //Store bits for Irrigation class
 #define SBI_IN_EEPROM 0      // Set to 1 once saved.
@@ -118,7 +118,8 @@ class Irrigation {
     uint8_t master_valve_pin = 0;  // Pin for master valve
     uint8_t rain_sensor_pin = 0;   // Pin for rain sensor.
     uint16_t wind_id;              // MySensor ID for wind.
-    Irrigation(uint8_t num_zones);
+    uint16_t eeprom_start;         // Start of EEPROM
+    Irrigation(uint8_t num_zones, uint16_t eeprom_st);
     void run_all_zones(void);
     void run_one_zone(uint8_t zn);
     void stop(void);
