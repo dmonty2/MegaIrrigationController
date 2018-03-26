@@ -21,6 +21,7 @@
 //#include <avr/eeprom.h>
 //#include <avr/pgmspace.h>
 
+#define ZONE_NAME_SIZE 15 // Zone name size 14+NUL
 
 // Start of eeprom is stored in EEPROM_LOCAL_CONFIG_ADDRESS
 //#include "../libraries/MySensors/core/MyEepromAddresses.h"
@@ -37,8 +38,8 @@
 #define ZONE_NUM 0                     // uint8_t
 #define ZONE_STORE_BITS (ZONE_NUM + 1) // uint8_t
 #define ZONE_PIN (ZONE_STORE_BITS + 1) // uint8_t
-#define ZONE_NAME (ZONE_PIN + 1)       // char[15]
-#define ZONE_RUNTIME (ZONE_NAME + 15)  // uint8_t (store in mintues)
+#define ZONE_NAME (ZONE_PIN + 1)       // char[15] ZONE_NAME_SIZE
+#define ZONE_RUNTIME (ZONE_NAME + ZONE_NAME_SIZE)   // uint8_t (store in mintues)
 #define ZONE_BLOWOUT_TIME (ZONE_RUNTIME + 2)        // uint16_t (store in seconds)
 #define ZONE_BLOWOUT_CYCLES (ZONE_BLOWOUT_TIME + 2) // uint8_t
 #define ZONE_IS_DRY_VALUE (ZONE_BLOWOUT_CYCLES + 1) // uint16_t
@@ -63,10 +64,6 @@
 // Ram bits Zone
 #define RBZ_IS_ON 0
 
-//#define hwReadConfig(__pos) eeprom_read_byte((uint8_t*)(__pos))
-//#define hwWriteConfig(__pos, __val) eeprom_update_byte((uint8_t*)(__pos), (__val))
-//#define hwReadConfigBlock(__buf, __pos, __length) eeprom_read_block((void*)(__buf), (void*)(__pos), (__length))
-//#define hwWriteConfigBlock(__buf, __pos, __length) eeprom_update_block((void*)(__buf), (void*)(__pos), (__length))
 
 uint16_t eeprom_start = 0; // Start of EEPROM
 
@@ -77,7 +74,7 @@ class Zone {
     uint8_t   number;       //  1 Zone Number
     uint8_t   storebits;    //  1 used to store on/off bits
     uint8_t   pin;          //  1 Arduino Pin number
-    char      name[15];     // 14 Zone Name 14char
+    char      name[ZONE_NAME_SIZE];     // 15 Zone Name 14char
     uint16_t  run_time;     //  4 Zone Run Time (in minutes)
     uint16_t  blowout_time; //  4 Zone Run Time for compressed air blow out. (in seconds)
     uint8_t   blow_cycles;  //  4 Number of cycles for compressor air blow out. 
@@ -90,6 +87,7 @@ class Zone {
     uint8_t   rambits;            // used store
 
     Zone (void);
+    void readConfig(uint8_t num);
     void readConfig(void);
     void updateConfig(void);
     void water_on(void);
@@ -97,6 +95,8 @@ class Zone {
     void wind_sensor_on(void);
     void wind_sensor_off(void);
     bool in_eeprom(void);
+    void set_name(char new_name[ZONE_NAME_SIZE]);
+    uint16_t eepromOffset(void);
 
     inline bool is_on() {
       return bitRead(rambits,RBZ_IS_ON);

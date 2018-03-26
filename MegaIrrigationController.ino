@@ -10,6 +10,9 @@
 #include <hd44780ioClass/hd44780_pinIO.h>
 const int rs=8, en=9, db4=4, db5=5, db6=6, db7=7, bl=10, blLevel=HIGH;
 hd44780_pinIO lcd(rs, en, db4, db5, db6, db7, bl, blLevel);
+const int LCD_COLS = 16;
+const int LCD_ROWS = 2;
+
 //#define MY_DEBUG
 #define MY_RF24_CE_PIN 49
 #define MY_RF24_CS_PIN 53
@@ -29,8 +32,9 @@ unsigned long currentMillis = millis(); // define here so it does not redefine i
 unsigned long previousMillis = 0;
 unsigned long previousDebounce = 0;
 unsigned long previousOffMillis = 0; // countdown power off timer
-// Innitiate with number of zones and start of MySensors Epprom space.
-Irrigation irrigation(NUM_ZONES,EEPROM_LOCAL_CONFIG_ADDRESS);
+
+// Innitiate with number of zones and EEPROM space just outside of MySensors EEPROM space.
+Irrigation irrigation(NUM_ZONES,(EEPROM_LOCAL_CONFIG_ADDRESS + 255));
 
 void presentation()
 {
@@ -44,7 +48,11 @@ void presentation()
 }
 
 void setup(){
-  
+  lcd.begin(LCD_COLS, LCD_ROWS);
+  lcd.clear();
+  lcd.print("Mega Irrigation");
+  lcd.setCursor(2,1);
+  lcd.print("Controller");
 }
 
 void loop(){
