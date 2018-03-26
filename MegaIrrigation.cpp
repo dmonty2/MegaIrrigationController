@@ -2,30 +2,23 @@
 
 #include <Arduino.h>
 #include "MegaIrrigation.h"
-//#include "../libraries/MySensors/core/MyEepromAddresses.h"
-//#include <avr/eeprom.h>
-//#include <avr/pgmspace.h>
 
-// ==== Irrigation Class ====
-Irrigation::Irrigation(uint8_t num_zones, uint16_t eeprom_st){
-  EEPROM.setMemPool(eeprom_st, EEPROMSizeMega);
-  eeprom_start = eeprom_st;
-  Zone zone[num_zones - 1];
-  for (uint8_t i; i<num_zones; i++){
-    zone[i].readConfig(i+1);
-  }
+
+void init_irrigation(uint8_t num_zones, int eeprom_start){
+  EEPROM.setMemPool(eeprom_start, EEPROMSizeMega);
+  _num_zones = num_zones;
+  _eeprom_start_addr = eeprom_start;
+}
+
+void run_all_zones(void){
 
 }
 
-void Irrigation::run_all_zones(void){
+void run_one_zone(uint8_t _zone_){
 
 }
 
-void Irrigation::run_one_zone(uint8_t zn){
-
-}
-
-void Irrigation::stop(void){
+void stop(void){
 
 }
 
@@ -38,75 +31,91 @@ uint8_t irWriteConfg(int pos){
 }
 
 
-
-
-// ==== Zone Class ==== 
-Zone::Zone(){
-  number = 0;
-  storebits = 0;
-  pin = 0;
-  strcpy (name, "             ");
-  run_time = 0;
-  is_dry_value = 0;
-  moisture_id = 0;
-  previous_moisture = 0;
-  current_moisture = 0;
-  rambits = 0;
+void set_zone_eeprom_offset(){
+  _zone_eeprom_offset = (int)(_eeprom_start_addr + (((int)_zone_number - 1) * ZONE_EEPROM_BYTES));
 }
 
-void Zone::readConfig(uint8_t num){
-  number = num;
-  readConfig();
+void loadZoneConfig(uint8_t num){
+  _zone_number = num;
+  set_zone_eeprom_offset();
+  _zone_storebits = EEPROM.readByte(ZONE_STORE_BITS + _zone_eeprom_offset);
+  _zone_pin = EEPROM.readByte(ZONE_PIN + _zone_eeprom_offset);
+  EEPROM.readBlock<char>(ZONE_NAME + _zone_eeprom_offset, _zone_name, sizeof(_zone_name));
+  _zone_run_time = EEPROM.readByte(ZONE_RUNTIME + _zone_eeprom_offset);
+  _zone_blowout_time = EEPROM.readInt(ZONE_BLOWOUT_TIME + _zone_eeprom_offset);
+  _zone_blow_cycles = EEPROM.readByte(ZONE_BLOWOUT_CYCLES + _zone_eeprom_offset);
+  _zone_is_dry_value = EEPROM.readInt(ZONE_IS_DRY_VALUE + _zone_eeprom_offset);
+  _zone_moisture_id = EEPROM.readInt(ZONE_MOISTURE_ID + _zone_eeprom_offset);
 }
 
-void Zone::readConfig(){
-  uint16_t offset = eepromOffset();
-  storebits = EEPROM.readByte(ZONE_STORE_BITS + offset);
-  pin = EEPROM.readByte(ZONE_PIN + offset);
-  EEPROM.readBlock<char>(ZONE_NAME + offset, name, sizeof(name));
-  run_time = EEPROM.readByte(ZONE_RUNTIME + offset);
-  blowout_time = EEPROM.readInt(ZONE_BLOWOUT_TIME + offset);
-  blow_cycles = EEPROM.readByte(ZONE_BLOWOUT_CYCLES + offset);
-  is_dry_value = EEPROM.readInt(ZONE_IS_DRY_VALUE + offset);
-  moisture_id = EEPROM.readInt(ZONE_MOISTURE_ID + offset);
+
+void updateZoneConfig(){
+  set_zone_eeprom_offset();
+  EEPROM.updateByte(ZONE_NUM + _zone_eeprom_offset,(uint8_t)_zone_number);
+  EEPROM.updateByte(ZONE_STORE_BITS + _zone_eeprom_offset,(uint8_t)_zone_storebits);
+  EEPROM.updateByte(ZONE_PIN + _zone_eeprom_offset,(uint8_t)_zone_pin);
+  EEPROM.updateBlock<char>(ZONE_NAME + _zone_eeprom_offset, _zone_name, sizeof(_zone_name));
+  EEPROM.updateByte(ZONE_RUNTIME + _zone_eeprom_offset,(uint8_t)_zone_run_time);
+  EEPROM.updateInt(ZONE_BLOWOUT_TIME + _zone_eeprom_offset,(uint8_t)_zone_blowout_time);
+  EEPROM.updateByte(ZONE_BLOWOUT_CYCLES + _zone_eeprom_offset,(uint8_t)_zone_blow_cycles);
+  EEPROM.updateInt(ZONE_IS_DRY_VALUE + _zone_eeprom_offset,(uint8_t)_zone_is_dry_value);
+  EEPROM.updateInt(ZONE_MOISTURE_ID + _zone_eeprom_offset,(uint8_t)_zone_moisture_id);
 }
 
-void Zone::updateConfig(){
-  uint16_t eeprom_offset = eepromOffset();
-  EEPROM.updateByte(ZONE_NUM + eeprom_offset,(uint8_t)number);
-  EEPROM.updateByte(ZONE_STORE_BITS + eeprom_offset,(uint8_t)storebits);
-  EEPROM.updateByte(ZONE_PIN + eeprom_offset,(uint8_t)pin);
-  EEPROM.updateBlock<char>(ZONE_NAME + eeprom_offset, name, sizeof(name));
-  EEPROM.updateByte(ZONE_RUNTIME + eeprom_offset,(uint8_t)run_time);
-  EEPROM.updateInt(ZONE_BLOWOUT_TIME + eeprom_offset,(uint8_t)blowout_time);
-  EEPROM.updateByte(ZONE_BLOWOUT_CYCLES + eeprom_offset,(uint8_t)blow_cycles);
-  EEPROM.updateInt(ZONE_IS_DRY_VALUE + eeprom_offset,(uint8_t)is_dry_value);
-  EEPROM.updateInt(ZONE_MOISTURE_ID + eeprom_offset,(uint8_t)moisture_id);
+bool zone_normally_open(){
+  return bitRead(_storebits,SBI_ZONE_NORMALLY_OPEN);
 }
 
-void Zone::water_on(){
-  bitSet(rambits,RBZ_IS_ON);
+void water_on(){
+  bitSet(_zone_rambits,RBZ_IS_ON);
+  if(_zone_pin >= 1){
+    if (zone_normally_open()){
+      digitalWrite(_zone_pin, HIGH);
+    } else {
+      digitalWrite(_zone_pin, LOW);
+    }
+  }
 }
 
-void Zone::water_off(){
-  bitClear(rambits,RBZ_IS_ON);
+void water_off(){
+  bitClear(_zone_rambits,RBZ_IS_ON);
+  if(_zone_pin >= 1){
+    if (zone_normally_open()){
+      digitalWrite(_zone_pin, LOW);
+    } else {
+      digitalWrite(_zone_pin, HIGH);
+    }
+  }
 }
 
-void Zone::wind_sensor_on(){
-  bitSet(storebits,SBZ_USE_WIND);
+void wind_sensor_on(){
+  bitSet(_zone_storebits,SBZ_USE_WIND);
 }
 
-void Zone::wind_sensor_off(void){
-  bitClear(storebits,SBZ_USE_WIND);
+void wind_sensor_off(void){
+  bitClear(_zone_storebits,SBZ_USE_WIND);
 }
 
-void Zone::set_name(char new_name[ZONE_NAME_SIZE]){
-  uint16_t eeprom_offset = eepromOffset();
-  strcpy(name,new_name);
-  EEPROM.updateBlock<char>(ZONE_NAME + eeprom_offset, name, sizeof(name));
+void set_zone_name(char new_name[ZONE_NAME_SIZE]){
+  strcpy(_zone_name,new_name);
+  EEPROM.updateBlock<char>(ZONE_NAME + _zone_eeprom_offset, _zone_name, sizeof(_zone_name));
 }
 
-uint16_t Zone::eepromOffset(){
-  return (uint16_t)(eeprom_start + ((number - 1) * ZONE_EEPROM_BYTES));
+
+bool zone_is_on() {
+  return bitRead(_zone_rambits,RBZ_IS_ON);
 }
+
+bool zone_use_moisture(){
+  return bitRead(_zone_storebits,SBZ_USE_MOISTURE);
+}
+
+bool zone_use_weather(){
+  return bitRead(_zone_storebits,SBZ_USE_WEATHER);
+}
+
+bool master_valve_normally_open(){
+  return bitRead(_storebits,SBI_MASTER_VALVE_NORMALLY_OPEN);
+}
+
 

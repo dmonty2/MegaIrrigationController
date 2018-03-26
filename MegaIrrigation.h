@@ -17,7 +17,9 @@
 
 #define IRRIGATION_VERSION 1
 
+#include "Arduino.h"
 #include <EEPROMex.h>
+
 //#include <avr/eeprom.h>
 //#include <avr/pgmspace.h>
 
@@ -65,68 +67,30 @@
 #define RBZ_IS_ON 0
 
 
-uint16_t eeprom_start = 0; // Start of EEPROM
+uint8_t  _version = IRRIGATION_VERSION;
+uint8_t  _storebits = 0;         // store bits
+uint8_t  _is_enabled = 0;        // Master ON OFF/rain
+uint8_t  _num_zones = 0;         // Number of zones.
+uint8_t  _master_valve_pin = 0;  // Pin for master valve
+uint8_t  _rain_sensor_pin = 0;   // Pin for rain sensor.
+uint16_t _wind_id = 0;           // MySensor ID for wind.
+int      _eeprom_start_addr = 0; // EEPROM start address.
 
-/// A watering zone
-class Zone {
-  // Store in EEPROM end-user sets
-  public:
-    uint8_t   number;       //  1 Zone Number
-    uint8_t   storebits;    //  1 used to store on/off bits
-    uint8_t   pin;          //  1 Arduino Pin number
-    char      name[ZONE_NAME_SIZE];     // 15 Zone Name 14char
-    uint16_t  run_time;     //  4 Zone Run Time (in minutes)
-    uint16_t  blowout_time; //  4 Zone Run Time for compressed air blow out. (in seconds)
-    uint8_t   blow_cycles;  //  4 Number of cycles for compressor air blow out. 
-    uint16_t  is_dry_value; //  2 Value at which the zone is considered dry.
-    uint16_t  moisture_id;  //  2 MySensors ID for moisture sensor.
+uint8_t   _zone_number = 0;       //  1 Zone Number
+uint8_t   _zone_storebits = 0;    //  1 used to store on/off bits
+uint8_t   _zone_pin = 0;          //  1 Arduino Pin number
+char      _zone_name[ZONE_NAME_SIZE];     // 15 Zone Name 14char
+uint16_t  _zone_run_time = 0;     //  4 Zone Run Time (in minutes)
+uint16_t  _zone_blowout_time = 0; //  4 Zone Run Time for compressed air blow out. (in seconds)
+uint8_t   _zone_blow_cycles = 0;  //  4 Number of cycles for compressor air blow out. 
+uint16_t  _zone_is_dry_value = 0; //  2 Value at which the zone is considered dry.
+uint16_t  _zone_moisture_id = 0;  //  2 MySensors ID for moisture sensor.
 
-    // Store in RAM
-    uint16_t  previous_moisture;  // Previous 
-    uint16_t  current_moisture;   // Current Mosture sensor value
-    uint8_t   rambits;            // used store
+// Store in RAM
+uint16_t  _zone_previous_moisture = 0;  // Previous 
+uint16_t  _zone_current_moisture = 0;   // Current Mosture sensor value
+int       _zone_eeprom_offset = 0;      // EEPROM address offset for this zone.
+uint8_t   _zone_rambits = 0;            // used store
 
-    Zone (void);
-    void readConfig(uint8_t num);
-    void readConfig(void);
-    void updateConfig(void);
-    void water_on(void);
-    void water_off(void);
-    void wind_sensor_on(void);
-    void wind_sensor_off(void);
-    bool in_eeprom(void);
-    void set_name(char new_name[ZONE_NAME_SIZE]);
-    uint16_t eepromOffset(void);
-
-    inline bool is_on() {
-      return bitRead(rambits,RBZ_IS_ON);
-    }
-
-    inline bool use_moisture(){
-      return bitRead(storebits,SBZ_USE_MOISTURE);
-    }
-
-    inline bool use_weather(){
-      return bitRead(storebits,SBZ_USE_WEATHER);
-    }
-
-};
-
-class Irrigation {
-  public:
-    uint8_t version = IRRIGATION_VERSION;
-    uint8_t storebits = 0;         // store bits
-    uint8_t is_enabled = 0;        // Master ON OFF/rain
-    uint8_t num_zones = 0;         // Number of zones.
-    uint8_t master_valve_pin = 0;  // Pin for master valve
-    uint8_t rain_sensor_pin = 0;   // Pin for rain sensor.
-    uint16_t wind_id;              // MySensor ID for wind.
-    Irrigation(uint8_t num_zones, uint16_t eeprom_st);
-    void run_all_zones(void);
-    void run_one_zone(uint8_t zn);
-    void stop(void);
-    void readConfig(void);
-    void updateConfig(void);
-};
 
 #endif

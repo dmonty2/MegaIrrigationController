@@ -13,15 +13,17 @@ hd44780_pinIO lcd(rs, en, db4, db5, db6, db7, bl, blLevel);
 const int LCD_COLS = 16;
 const int LCD_ROWS = 2;
 
-//#define MY_DEBUG
+//Serial.begin(115200);
+#define MY_DEBUG
 #define MY_RF24_CE_PIN 49
 #define MY_RF24_CS_PIN 53
 //#define MY_RF24_IRQ_PIN 3
 #define MY_RADIO_NRF24
-#define MY_TRANSPORT_WAIT_READY_MS 10000
+#define MY_TRANSPORT_WAIT_READY_MS 3000
 #include <MySensors.h>
 #include "MegaIrrigation.h"
-//
+#include "MegaIrrigation.cpp"
+
 
 
 // MySensors
@@ -34,7 +36,6 @@ unsigned long previousDebounce = 0;
 unsigned long previousOffMillis = 0; // countdown power off timer
 
 // Innitiate with number of zones and EEPROM space just outside of MySensors EEPROM space.
-Irrigation irrigation(NUM_ZONES,(EEPROM_LOCAL_CONFIG_ADDRESS + 255));
 
 void presentation()
 {
@@ -48,10 +49,12 @@ void presentation()
 }
 
 void setup(){
+  
+init_irrigation(NUM_ZONES, EEPROM_LOCAL_CONFIG_ADDRESS + 255);
   lcd.begin(LCD_COLS, LCD_ROWS);
   lcd.clear();
   lcd.print("Mega Irrigation");
-  lcd.setCursor(2,1);
+  lcd.setCursor(3,1);
   lcd.print("Controller");
 }
 
