@@ -13,10 +13,10 @@
 #include <EEPROMex.h>
 #define EEPROM_VERSION 1  // track major changes to eeprom
 // Start of eeprom is stored in EEPROM_LOCAL_CONFIG_ADDRESS
-//#include "../libraries/MySensors/core/MyEepromAddresses.h"
-// eeprom arangement will be offset by above.
+// "~/Arduino/libraries/MySensors/core/MyEepromAddresses.h"
+// eeprom arangement will be offset by EEPROM_LOCAL_CONFIG_ADDRESS.
 #define EEPROM_VERSION 0                               // uint8_t    1
-#define IRR_STORE_BITS (EEPROM_VERSION + 1)               // uint8_t    2
+#define IRR_STORE_BITS (EEPROM_VERSION + 1)            // uint8_t    2
 #define IRR_NUM_ZONES (IRR_STORE_BITS + 1)             // uint8_t    3
 #define IRR_MASTER_VALVE_PIN (IRR_NUM_ZONES + 1)       // uint8_t    4
 #define IRR_RAIN_SESNOR_PIN (IRR_MASTER_VALVE_PIN + 1) // uint8_t    5
@@ -27,17 +27,25 @@
 // With spare (7 bytes).
 #define IRR_EEPROM_BYTES  20 // EEPROM Bytes needed for IRR_*
 
-#define ZONE_NUM 0                     // uint8_t
-#define ZONE_STORE_BITS (ZONE_NUM + 1) // uint8_t
-#define ZONE_PIN (ZONE_STORE_BITS + 1) // uint8_t
-#define ZONE_NAME (ZONE_PIN + 1)       // char[15] ZONE_NAME_SIZE
-#define ZONE_RUNTIME (ZONE_NAME + ZONE_NAME_SIZE)   // uint8_t (store in mintues)
-#define ZONE_BLOWOUT_TIME (ZONE_RUNTIME + 2)        // uint16_t (store in seconds)
-#define ZONE_BLOWOUT_CYCLES (ZONE_BLOWOUT_TIME + 2) // uint8_t
-#define ZONE_IS_DRY_VALUE (ZONE_BLOWOUT_CYCLES + 1) // uint16_t
-#define ZONE_MOISTURE_ID (ZONE_IS_DRY_VALUE + 2)    // uint16_t
+#define ZONE_NUM 0                                  //  1 uint8_t
+#define ZONE_STORE_BITS (ZONE_NUM + 1)              //  2 uint8_t
+#define ZONE_PIN (ZONE_STORE_BITS + 1)              //  3 uint8_t
+#define ZONE_NAME (ZONE_PIN + 1)                    // 18 char[15] ZONE_NAME_SIZE
+#define ZONE_RUNTIME (ZONE_NAME + ZONE_NAME_SIZE)   // 19 uint8_t (store in mintues)
+#define ZONE_BLOWOUT_TIME (ZONE_RUNTIME + 2)        // 21 uint16_t (store in seconds)
+#define ZONE_BLOWOUT_CYCLES (ZONE_BLOWOUT_TIME + 2) // 22 uint8_t
+#define ZONE_IS_DRY_VALUE (ZONE_BLOWOUT_CYCLES + 1) // 24 uint16_t
+#define ZONE_MOISTURE_ID (ZONE_IS_DRY_VALUE + 2)    // 26 uint16_t
 // With spare (4 bytes)
 #define ZONE_EEPROM_BYTES 30 // EEPROM Bytes needed for each zone;
+
+#define SCHEDULE_NUM 0                              //  1 uint8_t
+#define SCHEDULE_STORE_BITS ( SCHEDULE_NUM + 1 )    //  3 uint16_t
+#define SCHEDULE_ZONES ( SCHEDULE_STORE_BITS + ? )  //  bunch of bits to hold zone num
+#define SCHEDULE_START1 ( SCHEDULE_ZONES + ? )      //  start time e.g. 6AM
+#define SCHEDULE_START2 ( SCHEDULE_START1 + ? )     //  start time 2 e.g. 6PM
+#define SCHEDULE_REPEAT_DELAY ( SCHEDULE_START2 + ? ) // delay before repeating.
+
 
 // Map Store bits for Settings _storebits
 #define SETTING_BIT_IN_EEPROM 0      // Set to 1 once saved.
@@ -55,6 +63,24 @@
 #define ZONE_BIT_USE_TEMP     5 // Use Temp sensor avoid freezing.
 #define ZONE_BIT_MINI_CYCLE   6 // prevent runoff on steep slopes.
 
+// Map Store bits for Schedule
+#define SCHEDULE_BIT_ENABLED  0 // 
+#define SCHEDULE_BIT_ANY_DAY  1
+#define SCHEDULE_BIT_SUN      2
+#define SCHEDULE_BIT_MON      3
+#define SCHEDULE_BIT_TUE      4
+#define SCHEDULE_BIT_WED      5
+#define SCHEDULE_BIT_THU      6
+#define SCHEDULE_BIT_FRI      7
+#define SCHEDULE_BIT_SAT      8
+#define SCHEDULE_BIT_NTH_DAY  9
+#define SCHEDULE_BIT_EVEN    10
+#define SCHEDULE_BIT_ODD     11
+#define SCHEDULE_BIT_
+#define SCHEDULE_BIT_
+#define SCHEDULE_BIT_
+#define SCHEDULE_BIT_
+#define SCHEDULE_BIT_
 // ============= LCD =============
 // LCD library supports broken backlight bug.
 #include <hd44780.h>
@@ -161,6 +187,9 @@ void checkButtonPress(){
 
 void checkZoneTimer(){
   if (_is_running == 1){
+    // put single, multiple, or all zones in an array and cycle through each
+    // for (uint8_t i = 0; i <= num_zones; i++ ){
+    //}
   }
 }
 
