@@ -41,10 +41,10 @@
 
 #define SCHEDULE_NUM 0                              //  1 uint8_t
 #define SCHEDULE_STORE_BITS ( SCHEDULE_NUM + 1 )    //  3 uint16_t
-#define SCHEDULE_ZONES ( SCHEDULE_STORE_BITS + ? )  //  bunch of bits to hold zone num
+#define SCHEDULE_ZONES ( SCHEDULE_STORE_BITS + ? )  //  5 uint16_t 16 zones.
 #define SCHEDULE_START1 ( SCHEDULE_ZONES + ? )      //  start time e.g. 6AM
 #define SCHEDULE_START2 ( SCHEDULE_START1 + ? )     //  start time 2 e.g. 6PM
-#define SCHEDULE_REPEAT_DELAY ( SCHEDULE_START2 + ? ) // delay before repeating.
+#define SCHEDULE_REPEAT_DELAY ( SCHEDULE_START2 + ? ) // delay before repeating 0.
 
 
 // Map Store bits for Settings _storebits
@@ -64,8 +64,8 @@
 #define ZONE_BIT_MINI_CYCLE   6 // prevent runoff on steep slopes.
 
 // Map Store bits for Schedule
-#define SCHEDULE_BIT_ENABLED  0 // 
-#define SCHEDULE_BIT_ANY_DAY  1
+#define SCHEDULE_BIT_ENABLED  0 // Set to 1 to enable
+#define SCHEDULE_BIT_ANY_DAY  1 // Water any/every day
 #define SCHEDULE_BIT_SUN      2
 #define SCHEDULE_BIT_MON      3
 #define SCHEDULE_BIT_TUE      4
@@ -73,14 +73,10 @@
 #define SCHEDULE_BIT_THU      6
 #define SCHEDULE_BIT_FRI      7
 #define SCHEDULE_BIT_SAT      8
-#define SCHEDULE_BIT_NTH_DAY  9
-#define SCHEDULE_BIT_EVEN    10
-#define SCHEDULE_BIT_ODD     11
-#define SCHEDULE_BIT_
-#define SCHEDULE_BIT_
-#define SCHEDULE_BIT_
-#define SCHEDULE_BIT_
-#define SCHEDULE_BIT_
+#define SCHEDULE_BIT_EVEN     9 // Water even days
+#define SCHEDULE_BIT_ODD     10 // Water odd days
+#define SCHEDULE_BIT_NTH_DAY 11
+
 // ============= LCD =============
 // LCD library supports broken backlight bug.
 #include <hd44780.h>
@@ -89,6 +85,13 @@ const int rs=8, en=9, db4=4, db5=5, db6=6, db7=7, bl=10, blLevel=HIGH;
 hd44780_pinIO lcd(rs, en, db4, db5, db6, db7, bl, blLevel);
 const int LCD_COLS = 16;
 const int LCD_ROWS = 2;
+#define btnRIGHT  0
+#define btnUP     1
+#define btnDOWN   2
+#define btnLEFT   3
+#define btnSELECT 4
+#define btnNONE   5
+
 
 // ========== MySensors ==========
 // MySensors setup
@@ -181,8 +184,15 @@ void loop(){
 
 // ====== Actions =======
 
-void checkButtonPress(){
-
+uint8_t checkButtonPress(){
+  int adc_key_in = analogRead(0);
+  if (adc_key_in > 1000) return btnNONE;
+  if (adc_key_in < 50)   return btnRIGHT;  
+  if (adc_key_in < 250)  return btnUP; 
+  if (adc_key_in < 450)  return btnDOWN; 
+  if (adc_key_in < 650)  return btnLEFT; 
+  if (adc_key_in < 850)  return btnSELECT;
+  return btnNONE;
 }
 
 void checkZoneTimer(){
