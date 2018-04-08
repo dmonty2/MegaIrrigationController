@@ -92,6 +92,84 @@ const int LCD_ROWS = 2;
 #define btnSELECT 4
 #define btnNONE   5
 
+enum menuItems {
+  menuActions,
+    menuEnable,
+    menuRunAllZones,
+    menuRunSomeZones,
+    menuBlowOutZones,
+  menuSettings,
+    menuNumberOfZones,
+    menuMasterPin,
+    menuMasterNormallyOpen,
+    menuZoneNormallyOpen,
+    menuRainPin,
+    menuRainNormallyOpen,
+    menuRainID,
+    menuTempID,
+    menuWindID,
+    menuWeatherID,
+    menuBlowOutWait,
+    menuSetTime,
+  menuZones,
+    menuZoneEnable,
+    menuZoneName,
+    menuZoneRunTime,
+    menuZonePin,
+    menuMoistureID,
+    menuDryLevel,
+    menuUseForecast,
+    menuAvoidWind,
+    menuAvoidFreeze,
+    menuBlowOutTime,
+    menuBlowOutCycles,
+    menuMiniCycle,
+  menuSchedule,
+    menuSceduleEnable,
+    menuScheduleDay,
+    menuScheduleZones,
+    menuScheduleStartTime1,
+    menuScheduleStartTime2,
+    menuRepeatDelay
+}
+
+// Only store strings/words once in memory and join them together.
+static const char txtActions[8] = "actions";
+static const char txtEnable[7] = "enable";
+static const char txtRunAll[8] = "run all";
+static const char txtRunSome[9] = "run some";
+static const char txtZone[5] = "zone";
+static const char txtZones[6] = "zones";
+static const char txtName[5] = "name";
+static const char txtBlowout[8] = "blowout";
+static const char txtNumberOf[10] = "number of";
+static const char txtMaster[7] = "master";
+static const char txtPIN[4] = "PIN";
+static const char txtID[3] = "ID";
+static const char txtOpen[5] = "open";
+static const char txtTemp[5] = "temp";
+static const char txtRain[5] = "rain";
+static const char txtDry[4] = "dry";
+static const char txtWind[5] = "wind";
+static const char txtFreeze[7] = "freeze";
+static const char txtWeather[8] = "weather";
+static const char txtWait[5] = "wait";
+static const char txtTime[5] = "time";
+static const char txtMoisture[9] = "moisture";
+static const char txtForecast[9] = "forecast";
+static const char txtAvoid[6] = "avoid";
+static const char txtCycles[7] = "cycles";
+static const char txtMini[5] = "mini";
+static const char txtSchedule[9] = "schedule";
+static const char txtDay[4] = "day";
+static const char txtStart[6] = "start";
+static const char txtRepeat[7] = "repeat";
+static const char txtEven[5] = "even";
+static const char txtOdd[4] = "odd";
+static const char txtAny[4] = "any";
+static const char txtSpecific[9] = "specific";
+static const char txtInterval[9] = "interval";
+
 
 // ========== MySensors ==========
 // MySensors setup
@@ -183,7 +261,6 @@ void loop(){
 
 
 // ====== Actions =======
-
 uint8_t checkButtonPress(){
   int adc_key_in = analogRead(0);
   if (adc_key_in > 1000) return btnNONE;
@@ -195,6 +272,11 @@ uint8_t checkButtonPress(){
   return btnNONE;
 }
 
+void updateDisplay(){
+  switch (menu_item) {
+    case: 
+  }
+}
 void checkZoneTimer(){
   if (_is_running == 1){
     // put single, multiple, or all zones in an array and cycle through each
