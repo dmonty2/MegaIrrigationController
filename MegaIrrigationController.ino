@@ -85,56 +85,68 @@ const int rs=8, en=9, db4=4, db5=5, db6=6, db7=7, bl=10, blLevel=HIGH;
 hd44780_pinIO lcd(rs, en, db4, db5, db6, db7, bl, blLevel);
 const int LCD_COLS = 16;
 const int LCD_ROWS = 2;
-#define btnRIGHT  0
-#define btnUP     1
-#define btnDOWN   2
-#define btnLEFT   3
-#define btnSELECT 4
-#define btnNONE   5
+enum buttonItems {
+  btnNone,
+  btnRight,
+  btnUp,
+  btnDown,
+  btnLeft,
+  btnSelect
+};
+
+buttonItems btnLast = btnNone;
+buttonItems btnCurrent = btnNone;
 
 enum menuItems {
-  menuActions,
-    menuEnable,
-    menuRunAllZones,
-    menuRunSomeZones,
-    menuBlowOutZones,
-  menuSettings,
-    menuNumberOfZones,
-    menuMasterPin,
-    menuMasterNormallyOpen,
-    menuZoneNormallyOpen,
-    menuRainPin,
-    menuRainNormallyOpen,
-    menuRainID,
-    menuTempID,
-    menuWindID,
-    menuWeatherID,
-    menuBlowOutWait,
-    menuSetTime,
-  menuZones,
-    menuZoneEnable,
-    menuZoneName,
-    menuZoneRunTime,
-    menuZonePin,
-    menuMoistureID,
-    menuDryLevel,
-    menuUseForecast,
-    menuAvoidWind,
-    menuAvoidFreeze,
-    menuBlowOutTime,
-    menuBlowOutCycles,
-    menuMiniCycle,
-  menuSchedule,
-    menuSceduleEnable,
-    menuScheduleDay,
-    menuScheduleZones,
-    menuScheduleStartTime1,
-    menuScheduleStartTime2,
-    menuRepeatDelay
-}
+  menuRoot,
+    menuActions,
+    menuSettings,
+    menuZones,
+    menuSchedule,
+      menuEnable,            //Actions
+      menuRunAllZones,
+      menuRunSomeZones,
+      menuBlowOutZones,
+      menuNumberOfZones,     //Settings
+      menuMasterPin,
+      menuMasterNormallyOpen,
+      menuZoneNormallyOpen,
+      menuRainPin,
+      menuRainNormallyOpen,
+      menuRainID,
+      menuTempID,
+      menuWindID,
+      menuWeatherID,
+      menuBlowOutWait,
+      menuSetTime,
+      menuZoneEnable,       //Zones
+      menuZoneName,
+      menuZoneRunTime,
+      menuZonePin,
+      menuMoistureID,
+      menuDryLevel,
+      menuUseForecast,
+      menuAvoidWind,
+      menuAvoidFreeze,
+      menuBlowOutTime,
+      menuBlowOutCycles,
+      menuMiniCycles,
+      menuScheduleEnable,   //Schedule
+      menuScheduleDay,
+      menuScheduleZones,
+      menuScheduleStartTime1,
+      menuScheduleStartTime2,
+      menuRepeatDelay
+};
+
+menuItems menuLevel = menuRoot;
+menuItems menuSelected = menuEnable;
+menuItems menuStart = menuEnable;
+menuItems menuEnd   = menuEnd;
 
 // Only store strings/words once in memory and join them together.
 static const char txtActions[8] = "actions";
+static const char txtSettings[9] = "settings";
 static const char txtEnable[7] = "enable";
 static const char txtRunAll[8] = "run all";
 static const char txtRunSome[9] = "run some";
@@ -170,6 +182,15 @@ static const char txtAny[4] = "any";
 static const char txtSpecific[9] = "specific";
 static const char txtInterval[9] = "interval";
 
+/*
+enum menuBits {
+  menuBitNone,
+  menuBitHasSubmenu,
+  menuBitYesNo,
+  menuBitSetNumber,
+  menuBitSetText,
+}
+*/
 
 // ========== MySensors ==========
 // MySensors setup
@@ -261,22 +282,103 @@ void loop(){
 
 
 // ====== Actions =======
-uint8_t checkButtonPress(){
+void checkButtonPress(){
   int adc_key_in = analogRead(0);
-  if (adc_key_in > 1000) return btnNONE;
-  if (adc_key_in < 50)   return btnRIGHT;  
-  if (adc_key_in < 250)  return btnUP; 
-  if (adc_key_in < 450)  return btnDOWN; 
-  if (adc_key_in < 650)  return btnLEFT; 
-  if (adc_key_in < 850)  return btnSELECT;
-  return btnNONE;
+  if (adc_key_in > 1000){
+    btnCurrent = btnNone;
+  }
+  else if (adc_key_in < 50){
+    btnCurrent = btnRight;  
+  }
+  else if (adc_key_in < 250){
+    btnCurrent = btnUp; 
+  }
+  else if (adc_key_in < 450){
+    btnCurrent = btnDown; 
+  }
+  else if (adc_key_in < 650){
+    btnCurrent = btnLeft; 
+  }
+  else if (adc_key_in < 850){
+    btnCurrent = btnSelect;
+  } else {
+    btnCurrent = btnNone;
+  }
+  if ( btnLast != btnCurrent ){
+    btnLast = btnCurrent;
+    if (btnCurrent == btnDown){
+      menuSelected = menuSelected + 1;
+    }
+    if (btnCurrent == btnUp){
+      menuSelected = menuSelected - 1;
+    }
+    updateDisplay();
+  }
 }
 
 void updateDisplay(){
-  switch (menu_item) {
-    case: 
+  char line1[17] = "                ";  //TODO: not sure if screen needs end of line
+  char line2[17] = "                ";
+  // Set Range of current menu
+  switch (menuLevel) {
+    case menuRoot:
+      menuStart = menuActions;
+      menuEnd = menuSchedule;
+      break;
+    case menuActions:
+      menuStart = menuEnable;
+      menuEnd = menuBlowOutZones;
+      break;
+    case menuSettings:
+      menuStart = menuNumberOfZones;
+      menuEnd = menuSetTime;
+      break;
+    case menuZones:
+      menuStart = menuZoneEnable;
+      menuEnd = menuMiniCycles;
+      break;
+    case menuSchedule:
+      menuStart = menuScheduleEnable;
+      menuEnd = menuRepeatDelay;
+      break;
   }
+  // Show two items of current display
+  if ( (menuSelected < menuStart || menuSelected > menuEnd) ){
+    menuSelected = menuStart;
+  }
+  getMenuText(line1, menuSelected);
+  if ( menuSelected + 1 <= menuEnd ){
+    getMenuText(line2, menuSelected + 1);
+  }
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print(line1);
+  lcd.setCursor(0,1);
+  lcd.print(line2);
 }
+
+// get text for a menu item
+void getMenuText(char *dest, menuItems mId){
+  switch (mId) {
+    case menuActions:
+      strcpy(dest, txtActions);
+      break;
+    case menuSettings:
+      strcpy(dest, txtSettings);
+      break;
+    case menuZones:
+      strcpy(dest, txtZones);
+      break;
+    case menuSchedule:
+      strcpy(dest, txtSchedule);
+      break;
+    case menuEnable:
+      strcpy(dest, txtEnable);
+      break;
+  }
+  dest[0] = toupper(dest[0]);
+}
+
 void checkZoneTimer(){
   if (_is_running == 1){
     // put single, multiple, or all zones in an array and cycle through each
