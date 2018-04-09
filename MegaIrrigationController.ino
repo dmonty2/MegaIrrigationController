@@ -136,20 +136,36 @@ enum menuItems {
       menuScheduleZones,
       menuScheduleStartTime1,
       menuScheduleStartTime2,
-      menuRepeatDelay
+      menuRepeatDelay,
+      menuLast
+};
+// Last menuItem in above enum is used to set settings array length.
+uint8_t menuBits[menuLast];
+enum menuItemBits {
+  menuBitIsBranch,    // Branch
+  menuBitInputYesNo,  // Leaf Yes/No
+  menuBitInputNumber, // Leaf Number
+  menuBitInputText,   // Leaf Text
+  menuBitInputTime,   // Leaf Time
+  menuBitIsNumList    // Branch List of Zones or Schedules 1,2,3,4...n
 };
 
 menuItems menuLevel = menuRoot;
 menuItems menuSelected = menuEnable;
 menuItems menuStart = menuEnable;
 menuItems menuEnd   = menuEnd;
+menuItems menuParent = menuRoot;
+
 
 // Only store strings/words once in memory and join them together.
+// TODO: if there is enough free memory I may later change these from char
+//       arrays to String objects.  In order to make the code more readable.
 static const char txtActions[8] = "actions";
 static const char txtSettings[9] = "settings";
 static const char txtEnable[7] = "enable";
-static const char txtRunAll[8] = "run all";
-static const char txtRunSome[9] = "run some";
+static const char txtRun[4] = "run";
+static const char txtAll[4] = "all";
+static const char txtSome[5] = "some";
 static const char txtZone[5] = "zone";
 static const char txtZones[6] = "zones";
 static const char txtName[5] = "name";
@@ -158,7 +174,7 @@ static const char txtNumberOf[10] = "number of";
 static const char txtMaster[7] = "master";
 static const char txtPIN[4] = "PIN";
 static const char txtID[3] = "ID";
-static const char txtOpen[5] = "open";
+static const char txtNOpen[7] = "N.Open";
 static const char txtTemp[5] = "temp";
 static const char txtRain[5] = "rain";
 static const char txtDry[4] = "dry";
@@ -168,7 +184,7 @@ static const char txtWeather[8] = "weather";
 static const char txtWait[5] = "wait";
 static const char txtTime[5] = "time";
 static const char txtMoisture[9] = "moisture";
-static const char txtForecast[9] = "forecast";
+static const char txtUseForecast[13] = "use forecast";
 static const char txtAvoid[6] = "avoid";
 static const char txtCycles[7] = "cycles";
 static const char txtMini[5] = "mini";
@@ -176,21 +192,20 @@ static const char txtSchedule[9] = "schedule";
 static const char txtDay[4] = "day";
 static const char txtStart[6] = "start";
 static const char txtRepeat[7] = "repeat";
+static const char txtDelay[6] = "delay";
 static const char txtEven[5] = "even";
 static const char txtOdd[4] = "odd";
 static const char txtAny[4] = "any";
+static const char txtMin[4] = "min";
+static const char txtSec[4] = "sec";
 static const char txtSpecific[9] = "specific";
 static const char txtInterval[9] = "interval";
+static const char txtSet[4] = "set";
+static const char txtLevel[6] = "level";
+static const char txtYes[4] = "Yes";
+static const char txtNo[3] = "No";
 
-/*
-enum menuBits {
-  menuBitNone,
-  menuBitHasSubmenu,
-  menuBitYesNo,
-  menuBitSetNumber,
-  menuBitSetText,
-}
-*/
+
 
 // ========== MySensors ==========
 // MySensors setup
@@ -268,6 +283,7 @@ void setup(){
   lcd.print("Mega Irrigation");
   lcd.setCursor(3,1);
   lcd.print("Controller");
+  initializeMenu();
 }
 
 void loop(){
@@ -312,49 +328,131 @@ void checkButtonPress(){
     if (btnCurrent == btnUp){
       menuSelected = menuSelected - 1;
     }
+    if (btnCurrent == btnLeft){
+      menuLevel = menuParent;
+    }
+    if (btnCurrent == btnRight){
+      menuLevel = menuSelected;
+    }
     updateDisplay();
   }
 }
 
+// Setup Menu bits
+void initializeMenu(){
+  // Clear the bits
+  int idx = 0;
+  for (idx = menuRoot; idx <= menuLast; idx++){
+    menuBits[idx] = 0;
+  }
+  int itemsBranch[4] = {menuActions,menuSettings,menuZones,menuSchedule};
+  for (idx=0; idx < 4; idx++){
+    bitSet(menuBits[itemsBranch[idx]],menuBitIsBranch);
+  }
+  int itemsYN[10] = { menuEnable, menuMasterNormallyOpen, menuZoneNormallyOpen, menuRainNormallyOpen,
+                      menuZoneEnable, menuUseForecast, menuAvoidWind, menuAvoidFreeze, menuMiniCycles,
+                      menuScheduleEnable };
+  for (idx=0; idx < 10; idx++){
+    bitSet(menuBits[itemsYN[idx]],menuBitInputYesNo);
+  }
+  int itemsNum[14] = { menuNumberOfZones, menuMasterPin, menuRainPin, menuRainID, menuTempID, menuWindID,
+                       menuWeatherID, menuBlowOutWait, menuZoneRunTime, menuZonePin, menuMoistureID,
+                       menuDryLevel, menuBlowOutTime, menuBlowOutCycles };
+  for (idx=0; idx < 14; idx++){
+    bitSet(menuBits[itemsNum[idx]],menuBitInputNumber);
+  }
+  bitSet(menuBits[menuZoneName], menuBitInputText);
+  bitSet(menuBits[menuScheduleStartTime1], menuBitInputTime);
+  bitSet(menuBits[menuScheduleStartTime2], menuBitInputTime);
+}
+
+/*
+void menuBitRead(menuItems menuIdx, menuItemBits menuBitPos){
+  bitRead(menuBitProperties[menuIdx], menuBitPos);
+}
+*/
 void updateDisplay(){
   char line1[17] = "                ";  //TODO: not sure if screen needs end of line
   char line2[17] = "                ";
   // Set Range of current menu
-  switch (menuLevel) {
-    case menuRoot:
-      menuStart = menuActions;
-      menuEnd = menuSchedule;
-      break;
-    case menuActions:
-      menuStart = menuEnable;
-      menuEnd = menuBlowOutZones;
-      break;
-    case menuSettings:
-      menuStart = menuNumberOfZones;
-      menuEnd = menuSetTime;
-      break;
-    case menuZones:
-      menuStart = menuZoneEnable;
-      menuEnd = menuMiniCycles;
-      break;
-    case menuSchedule:
-      menuStart = menuScheduleEnable;
-      menuEnd = menuRepeatDelay;
-      break;
+  if (bitRead(menuBits[menuLevel],menuBitIsBranch){
+    switch (menuLevel) {
+      case menuRoot:
+        menuStart = menuActions;
+        menuEnd = menuSchedule;
+        break;
+      case menuActions:
+        menuStart = menuEnable;
+        menuEnd = menuBlowOutZones;
+        break;
+      case menuSettings:
+        menuStart = menuNumberOfZones;
+        menuEnd = menuSetTime;
+        break;
+      case menuZones:
+        menuStart = menuZoneEnable;
+        menuEnd = menuMiniCycles;
+        break;
+      case menuSchedule:
+        menuStart = menuScheduleEnable;
+        menuEnd = menuRepeatDelay;
+        break;
+    }
+    menuParent = menuRoot;  switch(
+    // Show two items of current display
+    if ( menuSelected > menuEnd ){
+      menuSelected = menuStart;
+    }
+    if ( menuSelected < menuStart ){
+      menuSelected = menuEnd;
+    }
+    if ( btnLast == btnRight ) {
+      menuSelected = menuStart;
+    }
+    getMenuText(line1, menuSelected);
+    if ( menuSelected + 1 <= menuEnd ){
+      getMenuText(line2, menuSelected + 1);
+    }
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.write(">");
+    lcd.print(line1);
+    lcd.setCursor(0,1);
+    lcd.write(" ");
+    lcd.print(line2);
   }
-  // Show two items of current display
-  if ( (menuSelected < menuStart || menuSelected > menuEnd) ){
-    menuSelected = menuStart;
+  if (bitRead(menuBits[menuLevel], menuBitInputYesNo)){
+    getMenuText(line1, menuSelected);
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print(line1);
+    lcd.setCursor(0,1);
+    // TODO get state and write yes/no.
+    //lcd.write
   }
-  getMenuText(line1, menuSelected);
-  if ( menuSelected + 1 <= menuEnd ){
-    getMenuText(line2, menuSelected + 1);
+  if (bitRead(menuBits[menuLevel], menuBitInputYesNo)){}
+  if (bitRead(menuBits[menuLevel], menuBitInputNumber)){}
+  if (bitRead(menuBits[menuLevel], menuBitInputText)){}
+  if (bitRead(menuBits[menuLevel], menuBitInputTime)){}
+  if (bitRead(menuBits[menuLevel], menuBitNumList)){}
+  /*
+  if (menuSelected >= menuActions && menuSelected <= menuSchedule){
+    menuParent = menuRoot;
   }
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print(line1);
-  lcd.setCursor(0,1);
-  lcd.print(line2);
+  if (menuSelected >= menuEnable && menuSelected <= menuBlowOutZones ){
+    menuParent = menuActions;
+  }
+  if (menuSelected >= menuNumberOfZones && menuSelected <= menuSetTime ){
+    menuParent = menuSettings;
+  }
+  if (menuSelected >= menuZoneEnable && menuSelected <= menuMiniCycles ){
+    menuParent = menuZones;
+  }
+  if (menuSelected >= menuScheduleEnable && menuSelected <= menuRepeatDelay ){
+    menuParent = menuSchedule;
+  }
+  */
+
 }
 
 // get text for a menu item
@@ -374,7 +472,177 @@ void getMenuText(char *dest, menuItems mId){
       break;
     case menuEnable:
       strcpy(dest, txtEnable);
+      strcat(dest, " ");
+      strcat(dest, txtAll);
       break;
+    case menuRunAllZones:
+      strcpy(dest, txtRun);
+      strcat(dest, " ");
+      strcat(dest, txtAll);
+      strcat(dest, " ");
+      strcat(dest, txtZones);
+      break;
+    case menuRunSomeZones:
+      strcpy(dest, txtRun);
+      strcat(dest, " ");
+      strcat(dest, txtSome);
+      strcat(dest, " ");
+      strcat(dest, txtZones);
+      break;
+    case menuBlowOutZones:
+      strcpy(dest, txtBlowout);
+      strcat(dest, " ");
+      strcat(dest, txtZones);
+      break;
+    case menuNumberOfZones:
+      strcpy(dest, txtNumberOf);
+      strcat(dest, " ");
+      strcat(dest, txtZones);
+      break;
+    case menuMasterPin:
+      strcpy(dest, txtMaster);
+      strcat(dest, " ");
+      strcat(dest, txtPIN);
+      break;
+    case menuMasterNormallyOpen:
+      strcpy(dest, txtMaster);
+      strcat(dest, " ");
+      strcat(dest, txtNOpen);
+      break;
+    case menuZoneNormallyOpen:
+      strcpy(dest, txtZone);
+      strcat(dest, " ");
+      strcat(dest, txtNOpen);
+      break;
+    case menuRainPin:
+      strcpy(dest, txtRain);
+      strcat(dest, " ");
+      strcat(dest, txtPIN);
+      break;
+    case menuRainNormallyOpen:
+      strcpy(dest, txtRain);
+      strcat(dest, " ");
+      strcat(dest, txtNOpen);
+      break;
+    case menuRainID:
+      strcpy(dest, txtRain);
+      strcat(dest, " ");
+      strcat(dest, txtID);
+      break;
+    case menuTempID:
+      strcpy(dest, txtTemp);
+      strcat(dest, " ");
+      strcat(dest, txtID);
+      break;
+    case menuWindID:
+      strcpy(dest, txtWind);
+      strcat(dest, " ");
+      strcat(dest, txtID);
+      break;
+    case menuWeatherID:
+      strcpy(dest, txtWeather);
+      strcat(dest, " ");
+      strcat(dest, txtID);
+      break;
+    case menuBlowOutWait:
+      strcpy(dest, txtBlowout);
+      strcat(dest, " ");
+      strcat(dest, txtWait);
+      break;
+    case menuSetTime:
+      strcpy(dest, txtSet);
+      strcat(dest, " ");
+      strcat(dest, txtTime);
+      break;
+    case menuZoneEnable:
+      strcpy(dest, txtZone);
+      strcat(dest, " ");
+      strcat(dest, txtEnable);
+      break;
+    case menuZoneName:
+      strcpy(dest, txtZone);
+      strcat(dest, " ");
+      strcat(dest, txtName);
+      break;
+    case menuZoneRunTime:
+      strcpy(dest, txtZone);
+      strcat(dest, " ");
+      strcat(dest, txtRun);
+      strcat(dest, " ");
+      strcat(dest, txtTime);
+      break;
+    case menuZonePin:
+      strcpy(dest, txtZone);
+      strcat(dest, " ");
+      strcat(dest, txtPIN);
+      break;
+    case menuMoistureID:
+      strcpy(dest, txtMoisture);
+      strcat(dest, " ");
+      strcat(dest, txtID);
+      break;
+    case menuDryLevel:
+      strcpy(dest, txtDry);
+      strcat(dest, " ");
+      strcat(dest, txtLevel);
+      break;
+    case menuUseForecast:
+      strcpy(dest, txtUseForecast);
+      break;
+    case menuAvoidWind:
+      strcpy(dest, txtAvoid);
+      strcat(dest, " ");
+      strcat(dest, txtWind);
+      break;
+    case menuAvoidFreeze:
+      strcpy(dest, txtAvoid);
+      strcat(dest, " ");
+      strcat(dest, txtFreeze);
+      break;
+    case menuBlowOutTime:
+      strcpy(dest, txtBlowout);
+      strcat(dest, " ");
+      strcat(dest, txtTime);
+      break;
+    case menuBlowOutCycles:
+      strcpy(dest, txtBlowout);
+      strcat(dest, " ");
+      strcat(dest, txtCycles);
+      break;
+    case menuMiniCycles:
+      strcpy(dest, txtMini);
+      strcat(dest, " ");
+      strcat(dest, txtCycles);
+      break;
+    case menuScheduleEnable:
+      strcpy(dest, txtSchedule);
+      strcat(dest, " ");
+      strcat(dest, txtEnable);
+      break;
+    case menuScheduleDay:
+      strcpy(dest, txtDay);
+      break;
+    case menuScheduleZones:
+      strcpy(dest, txtZones);
+      break;
+    case menuScheduleStartTime1:
+      strcpy(dest, txtStart);
+      strcat(dest, " ");
+      strcat(dest, txtTime);
+      strcat(dest, "1");
+      break;
+    case menuScheduleStartTime2:
+      strcpy(dest, txtStart);
+      strcat(dest, " ");
+      strcat(dest, txtTime);
+      strcat(dest, "2");
+      break;
+    case menuRepeatDelay:
+      strcpy(dest, txtRepeat);
+      strcat(dest, " ");
+      strcat(dest, txtDelay);
+      break;
+      
   }
   dest[0] = toupper(dest[0]);
 }
