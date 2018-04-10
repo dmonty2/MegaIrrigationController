@@ -12,6 +12,10 @@
 // EEPROM simplify storing retrieving various data types. 
 #include <EEPROMex.h>
 #define EEPROM_VERSION 1  // track major changes to eeprom
+
+
+#define ZONE_NAME_SIZE 15 // Zone name size 14+NUL
+
 // Start of eeprom is stored in EEPROM_LOCAL_CONFIG_ADDRESS
 // "~/Arduino/libraries/MySensors/core/MyEepromAddresses.h"
 // eeprom arangement will be offset by EEPROM_LOCAL_CONFIG_ADDRESS.
@@ -150,6 +154,10 @@ enum menuItemBits {
   menuBitIsNumList    // Branch List of Zones or Schedules 1,2,3,4...n
 };
 
+uint8_t menuBoolVal = 0;
+uint8_t menuIntVal = 0;
+char menuTextVal[ZONE_NAME_SIZE];
+
 menuItems menuLevel = menuRoot;
 menuItems menuSelected = menuEnable;
 menuItems menuStart = menuEnable;
@@ -157,7 +165,8 @@ menuItems menuEnd   = menuEnd;
 menuItems menuParent = menuRoot;
 
 
-// Only store strings/words once in memory and join them together.
+
+// Dictionary to only store strings/words once in memory and join them together.
 // TODO: if there is enough free memory I may later change these from char
 //       arrays to String objects.  In order to make the code more readable.
 static const char txtActions[8] = "actions";
@@ -222,7 +231,6 @@ MyMessage msg_ALL (0,0);  // initate and re-use to save memory.
 
 
 // ======= Program variables =======
-#define ZONE_NAME_SIZE 15 // Zone name size 14+NUL
 unsigned long _currentMillis = millis(); // define here so it does not redefine in the loop.
 unsigned long _previousMillis = 0;
 unsigned long _previousDebounce = 0;
@@ -263,7 +271,9 @@ uint16_t _zone_previous_moisture = 0;  // Previous
 uint16_t _zone_current_moisture = 0;   // Current Mosture sensor value
 int      _zone_eeprom_offset = 0;      // EEPROM address offset for this zone.
 
-
+// Schedule saved in EEPROM
+uint8_t _schedule_number = 0;    // 1 Schedule Number
+uint8_t _schedule_storebits = 0; // 1 used to store on/off bits
 
 void presentation()
 {
@@ -323,10 +333,20 @@ void checkButtonPress(){
   if ( btnLast != btnCurrent ){
     btnLast = btnCurrent;
     if (btnCurrent == btnDown){
-      menuSelected = menuSelected + 1;
+      if (bitRead(menuBits[menuLevel],menuBitIsBranch)){
+        menuSelected = menuSelected + 1;
+      }
+      if (bitRead(menuBits[menuLevel], menuBitInputYesNo)){
+        menuBoolVal = !menuBoolVal;
+      }
     }
     if (btnCurrent == btnUp){
-      menuSelected = menuSelected - 1;
+      if (bitRead(menuBits[menuLevel],menuBitIsBranch)){
+        menuSelected = menuSelected - 1;
+      }
+      if (bitRead(menuBits[menuLevel], menuBitInputYesNo)){
+        menuBoolVal = !menuBoolVal;
+      }
     }
     if (btnCurrent == btnLeft){
       menuLevel = menuParent;
@@ -345,8 +365,8 @@ void initializeMenu(){
   for (idx = menuRoot; idx <= menuLast; idx++){
     menuBits[idx] = 0;
   }
-  int itemsBranch[4] = {menuActions,menuSettings,menuZones,menuSchedule};
-  for (idx=0; idx < 4; idx++){
+  int itemsBranch[5] = {menuRoot,menuActions,menuSettings,menuZones,menuSchedule};
+  for (idx=0; idx < 5; idx++){
     bitSet(menuBits[itemsBranch[idx]],menuBitIsBranch);
   }
   int itemsYN[10] = { menuEnable, menuMasterNormallyOpen, menuZoneNormallyOpen, menuRainNormallyOpen,
@@ -375,7 +395,7 @@ void updateDisplay(){
   char line1[17] = "                ";  //TODO: not sure if screen needs end of line
   char line2[17] = "                ";
   // Set Range of current menu
-  if (bitRead(menuBits[menuLevel],menuBitIsBranch){
+  if (bitRead(menuBits[menuLevel],menuBitIsBranch)){
     switch (menuLevel) {
       case menuRoot:
         menuStart = menuActions;
@@ -398,7 +418,7 @@ void updateDisplay(){
         menuEnd = menuRepeatDelay;
         break;
     }
-    menuParent = menuRoot;  switch(
+    menuParent = menuRoot;
     // Show two items of current display
     if ( menuSelected > menuEnd ){
       menuSelected = menuStart;
@@ -422,19 +442,27 @@ void updateDisplay(){
     lcd.print(line2);
   }
   if (bitRead(menuBits[menuLevel], menuBitInputYesNo)){
+    // readValue
+    menuBoolVal = getBitVal(menuLevel);
+    // Display
     getMenuText(line1, menuSelected);
     lcd.clear();
     lcd.setCursor(0,0);
     lcd.print(line1);
     lcd.setCursor(0,1);
-    // TODO get state and write yes/no.
-    //lcd.write
+    if ( menuBoolVal == 1 ){
+      strcpy(line2, txtYes);
+    } else {
+      strcpy(line2, txtNo);
+    }
+    line2[0] = toupper(line2[0]);
+    lcd.print(line2); 
   }
   if (bitRead(menuBits[menuLevel], menuBitInputYesNo)){}
   if (bitRead(menuBits[menuLevel], menuBitInputNumber)){}
   if (bitRead(menuBits[menuLevel], menuBitInputText)){}
   if (bitRead(menuBits[menuLevel], menuBitInputTime)){}
-  if (bitRead(menuBits[menuLevel], menuBitNumList)){}
+  //if (bitRead(menuBits[menuLevel], menuBitNumList)){}
   /*
   if (menuSelected >= menuActions && menuSelected <= menuSchedule){
     menuParent = menuRoot;
@@ -454,6 +482,7 @@ void updateDisplay(){
   */
 
 }
+
 
 // get text for a menu item
 void getMenuText(char *dest, menuItems mId){
@@ -647,6 +676,42 @@ void getMenuText(char *dest, menuItems mId){
   dest[0] = toupper(dest[0]);
 }
 
+
+bool getBitVal(menuItems mId){
+  switch (mId){
+    case menuEnable:
+      return is_enabled();
+      break;
+    case menuMasterNormallyOpen:
+      return master_valve_normally_open();
+      break;
+    case menuZoneNormallyOpen:
+      return zone_normally_open();
+      break;
+    case menuRainNormallyOpen:
+      return rain_normally_open();
+      break;
+    case menuZoneEnable:
+      return zone_is_enabled();
+      break;
+    case menuUseForecast:
+      return zone_use_rain();
+      break;
+    case menuAvoidWind:
+      return zone_use_wind();
+      break;
+    case menuAvoidFreeze:
+      return zone_use_temp();
+      break;
+    case menuMiniCycles:
+      return zone_use_mini_cycle();
+      break;
+    case menuScheduleEnable:
+      return schedule_is_enabled();
+      break;
+  }
+}
+
 void checkZoneTimer(){
   if (_is_running == 1){
     // put single, multiple, or all zones in an array and cycle through each
@@ -838,6 +903,8 @@ bool zone_use_mini_cycle(){
   return bitRead(_zone_storebits,ZONE_BIT_MINI_CYCLE);
 }
 
-
+bool schedule_is_enabled(){
+  return bitRead(_schedule_storebits,SCHEDULE_BIT_ENABLED);
+}
 
 
