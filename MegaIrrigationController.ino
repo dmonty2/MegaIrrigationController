@@ -307,7 +307,8 @@ void loop(){
 }
 
 
-// ====== Actions =======
+// ====== Detect key-pad button press =======
+// Buttons change behaviour based on sub-menu.
 void checkButtonPress(){
   int adc_key_in = analogRead(0);
   if (adc_key_in > 1000){
@@ -352,7 +353,20 @@ void checkButtonPress(){
       menuLevel = menuParent;
     }
     if (btnCurrent == btnRight){
-      menuLevel = menuSelected;
+      if (bitRead(menuBits[menuLevel],menuBitIsBranch)){
+        menuLevel = menuSelected;
+      }
+      if (bitRead(menuBits[menuLevel], menuBitInputYesNo)){
+        menuBoolVal = !menuBoolVal;
+      }
+    }
+    if (btnCurrent == btnSelect){
+      if (bitRead(menuBits[menuLevel],menuBitIsBranch)){
+        menuLevel = menuSelected;
+      }
+      if (bitRead(menuBits[menuLevel], menuBitInputYesNo)){
+        setBitVal(menuLevel);
+      }
     }
     updateDisplay();
   }
@@ -443,7 +457,7 @@ void updateDisplay(){
   }
   if (bitRead(menuBits[menuLevel], menuBitInputYesNo)){
     // readValue
-    menuBoolVal = getBitVal(menuLevel);
+    //getBitVal(menuLevel);
     // Display
     getMenuText(line1, menuSelected);
     lcd.clear();
@@ -452,8 +466,14 @@ void updateDisplay(){
     lcd.setCursor(0,1);
     if ( menuBoolVal == 1 ){
       strcpy(line2, txtYes);
+      if (getBitVal(menuLevel) == 1){
+        strcat(line2, "*");
+      }
     } else {
       strcpy(line2, txtNo);
+      if (getBitVal(menuLevel) == 0){
+        strcat(line2, "*");
+      }
     }
     line2[0] = toupper(line2[0]);
     lcd.print(line2); 
@@ -712,6 +732,41 @@ bool getBitVal(menuItems mId){
   }
 }
 
+void setBitVal(menuItems mId){
+  switch (mId){
+    case menuEnable:
+      return set_is_enabled(menuBoolVal);
+      break;
+    case menuMasterNormallyOpen:
+      return set_master_valve_normally_open(menuBoolVal);
+      break;
+    case menuZoneNormallyOpen:
+      return set_zone_normally_open(menuBoolVal);
+      break;
+    case menuRainNormallyOpen:
+      return set_rain_normally_open(menuBoolVal);
+      break;
+    case menuZoneEnable:
+      return set_zone_is_enabled(menuBoolVal);
+      break;
+    case menuUseForecast:
+      return set_zone_use_rain(menuBoolVal);
+      break;
+    case menuAvoidWind:
+      return set_zone_use_wind(menuBoolVal);
+      break;
+    case menuAvoidFreeze:
+      return set_zone_use_temp(menuBoolVal);
+      break;
+    case menuMiniCycles:
+      return set_zone_use_mini_cycle(menuBoolVal);
+      break;
+    case menuScheduleEnable:
+      return set_schedule_is_enabled(menuBoolVal);
+      break;
+  }
+}
+
 void checkZoneTimer(){
   if (_is_running == 1){
     // put single, multiple, or all zones in an array and cycle through each
@@ -789,20 +844,46 @@ bool in_eeprom(){
   return bitRead(_storebits,SETTING_BIT_IN_EEPROM);
 }
 
+void saveBit(uint8_t *dest, uint8_t bit_position, int eeprom_dest, bool val){
+  if (val == 1){
+    bitSet(dest,bit_position);
+    EEPROM.updateByte(eeprom_dest,(uint8_t)dest);
+  } else {
+    bitClear(dest,bit_position);
+    EEPROM.updateByte(eeprom_dest,(uint8_t)dest);
+  }
+} 
+
 bool is_enabled(){
   return bitRead(_storebits,SETTING_BIT_ENABLE);
+}
+
+void set_is_enabled(bool val){
+  saveBit(_storebits, SETTING_BIT_ENABLE, IRR_STORE_BITS, val)
 }
 
 bool master_valve_normally_open(){
   return bitRead(_storebits,SETTING_BIT_MASTER_VALVE_NORMALLY_OPEN);
 }
 
+void set_master_valve_normally_open(bool val){
+  saveBit(_storebits, SETTING_BIT_MASTER_VALVE_NORMALLY_OPEN, IRR_STORE_BITS, val)
+}
+
 bool zone_normally_open(){
   return bitRead(_storebits,SETTING_BIT_ZONE_NORMALLY_OPEN);
 }
 
+void set_zone_normally_open(bool val){
+  saveBit(_storebits, SETTING_BIT_ZONE_NORMALLY_OPEN, IRR_STORE_BITS, val)
+}
+
 bool rain_normally_open(){
   return bitRead(_storebits,SETTING_BIT_RAIN_NORMALLY_OPEN);
+}
+
+void set_rain_normally_open(bool val){
+  saveBit(_storebits, SETTING_BIT_RAIN_NORMALLY_OPEN, IRR_STORE_BITS, val)
 }
 
 
