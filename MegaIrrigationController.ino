@@ -154,7 +154,7 @@ enum menuItemBits {
 };
 
 uint8_t menuBoolVal = 0;
-uint8_t menuIntVal = 0;
+uint8_t menuNumVal = 0;
 char menuTextVal[ZONE_NAME_SIZE];
 
 menuItems menuLevel = menuRoot;
@@ -167,6 +167,7 @@ uint8_t menuParentTree[4] = { 0, 0, 0, 0 };
 
 
 // Dictionary to only store strings/words once in memory and join them together.
+// This may not be worth the overhead of the functions needed to the strings.
 // TODO: if there is enough free memory I may later change these from char
 //       arrays to String objects.  In order to make the code more readable.
 static const char txtActions[8] = "actions";
@@ -307,12 +308,15 @@ void loop(){
   }
 }
 
-// Track traversing into sub-menus.
+// Track traversing into sub-menus Load settings from memory
 void menuLevelEnter (uint8_t val){
   for (uint8_t i = 0; i <= 3; i++){
     if (menuParentTree[i] == 0){
       menuParentTree[i] = val;
       menuLevel = val;
+      if (bitRead(menuBits[menuLevel], menuBitInputNumber)){
+        menuNumVal = getNumVal(menuLevel); 
+      }
       return;
     }
   }
@@ -393,17 +397,17 @@ void checkButtonPress(){
 
     // Navigating a Number leaf
     if (bitRead(menuBits[menuLevel], menuBitInputNumber)){
-      if (btnCurrent == btnDown && menuIntVal > 0){
-          menuIntVal -= 1;
+      if (btnCurrent == btnDown && menuNumVal > 0){
+          menuNumVal -= 1;
       }
-      if ( btnCurrent == btnUp && menuIntVal <= 254){
-          menuIntVal += 1;
+      if ( btnCurrent == btnUp && menuNumVal <= 65000){
+          menuNumVal += 1;
       }
       if (btnCurrent == btnLeft){
         menuLevelExit();
       }
       if (btnCurrent == btnSelect){
-        setIntVal(menuLevel);
+        setNumVal(menuLevel);
       }
     }
     updateDisplay();
@@ -446,7 +450,7 @@ void menuBitRead(menuItems menuIdx, menuItemBits menuBitPos){
 void updateDisplay(){
   char line1[17] = "                ";  //TODO: not sure if screen needs end of line
   char line2[17] = "                ";
-  // Set Range of current menu
+  // == Branch Display ==
   if (bitRead(menuBits[menuLevel],menuBitIsBranch)){
     switch (menuLevel) {
       case menuRoot:
@@ -470,7 +474,6 @@ void updateDisplay(){
         menuEnd = menuRepeatDelay;
         break;
     }
-    //menuParent = menuRoot;
     // Show two items of current display
     if ( menuSelected > menuEnd ){
       menuSelected = menuStart;
@@ -493,10 +496,8 @@ void updateDisplay(){
     lcd.write(" ");
     lcd.print(line2);
   }
+  // == Yes No Display ==
   if (bitRead(menuBits[menuLevel], menuBitInputYesNo)){
-    // readValue
-    //getBitVal(menuLevel);
-    // Display
     getMenuText(line1, menuSelected);
     lcd.clear();
     lcd.setCursor(0,0);
@@ -516,17 +517,18 @@ void updateDisplay(){
     line2[0] = toupper(line2[0]);
     lcd.print(line2); 
   }
+  // == Number Display ==
   if (bitRead(menuBits[menuLevel], menuBitInputNumber)){
     lcd.clear();
     lcd.setCursor(0,0);
     lcd.print(line1);
     lcd.setCursor(0,1);
-    if ( menuIntVal == 0 ){
+    if ( menuNumVal == 0 ){
       strcpy(line2, 0);
       strcat(line2, " ");
       strcat(line2, txtDisabled);
     } else {
-      strcpy(line2, menuIntVal);
+      strcpy(line2, menuNumVal);
     }
     lcd.print(line2);
   }
@@ -825,50 +827,98 @@ void setBitVal(menuItems mId){
 }
 
 
-void setIntVal(menuItems mId){
+void getNumVal(menuItems mId){
+  switch (mId){
+    case menuNumberOfZones:
+      return _num_zones;
+      break;
+    case menuMasterPin:
+      return _master_valve_pin;
+      break;
+    case menuRainPin:
+      return _rain_sensor_pin;
+      break;
+    case menuRainID:
+      return _rain_id;
+      break;
+    case menuTempID:
+      return _temperature_id;
+      break;
+    case menuWindID:
+      return _wind_id;
+      break;
+    case menuWeatherID:
+      return 0;  //TODO work out weather forcast interface
+      break;
+    case menuBlowOutWait:
+      return _blowout_recharge_wait;
+      break;
+    case menuZoneRunTime:
+      return _zone_run_time;
+      break;
+    case menuZonePin:
+      return _zone_pin;
+      break;
+    case menuMoistureID:
+      return _zone_moisture_id;
+      break;
+    case menuDryLevel:
+      return _zone_is_dry_value;
+      break;
+    case menuBlowOutTime:
+      return _zone_blowout_time;
+      break;
+    case menuBlowOutCycles:
+      return _zone_blow_cycles;
+      break;
+  }
+}
+
+
+void setNumVal(menuItems mId){
   /*
   switch (mId){
     case menuNumberOfZones:
-      return set_number_of_zones(menuIntVal);
+      return set_number_of_zones(menuNumVal);
       break;
     case menuMasterPin:
-      return set_master_pin(menuIntVal);
+      return set_master_pin(menuNumVal);
       break;
     case menuRainPin:
-      return set_rain_pin(menuIntVal);
+      return set_rain_pin(menuNumVal);
       break;
     case menuRainID:
-      return set_rain_id(menuIntVal);
+      return set_rain_id(menuNumVal);
       break;
     case menuTempID:
-      return set_temp_id(menuIntVal);
+      return set_temp_id(menuNumVal);
       break;
     case menuWindID:
-      return set_wind_id(menuIntVal);
+      return set_wind_id(menuNumVal);
       break;
     case menuWeatherID:
-      return set_weather_id(menuIntVal);
+      return set_weather_id(menuNumVal);
       break;
     case menuBlowOutWait:
-      return set_blowout_wait(menuIntVal);
+      return set_blowout_wait(menuNumVal);
       break;
     case menuZoneRunTime:
-      return set_zone_run_time(menuIntVal);
+      return set_zone_run_time(menuNumVal);
       break;
     case menuZonePin:
-      return set_zone_pin(menuIntVal);
+      return set_zone_pin(menuNumVal);
       break;
     case menuMoistureID:
-      return set_moisture_id(menuIntVal);
+      return set_moisture_id(menuNumVal);
       break;
     case menuDryLevel:
-      return set_dry_level(menuIntVal);
+      return set_dry_level(menuNumVal);
       break;
     case menuBlowOutTime:
-      return set_blowout_time(menuIntVal);
+      return set_blowout_time(menuNumVal);
       break;
     case menuBlowOutCycles:
-      return set_blowout_cycles(menuIntVal);
+      return set_blowout_cycles(menuNumVal);
       break;
   }
   */
