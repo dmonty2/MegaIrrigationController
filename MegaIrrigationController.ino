@@ -7,7 +7,6 @@
 //#define NUM_ZONES 5
 
 #define IRRIGATION_VERSION 1
-
 // ======== EEPROM =========
 // EEPROM simplify storing retrieving various data types. 
 #include <EEPROMex.h>
@@ -162,7 +161,8 @@ menuItems menuLevel = menuRoot;
 menuItems menuSelected = menuEnable;
 menuItems menuStart = menuEnable;
 menuItems menuEnd   = menuEnd;
-menuItems menuParent = menuRoot;
+//menuItems menuParent = menuRoot;
+uint8_t menuParentTree[4] = { 0, 0, 0, 0 };
 
 
 
@@ -213,6 +213,7 @@ static const char txtSet[4] = "set";
 static const char txtLevel[6] = "level";
 static const char txtYes[4] = "Yes";
 static const char txtNo[3] = "No";
+static const char txtDisabled = "disabled";
 
 
 
@@ -306,7 +307,35 @@ void loop(){
   }
 }
 
+// Track traversing into sub-menus.
+void menuLevelEnter (uint8_t val){
+  for (uint8_t i = 0; i <= 3; i++){
+    if (menuParentTree[i] == 0){
+      menuParentTree[i] = val;
+      menuLevel = val;
+      return;
+    }
+  }
+}
 
+// Track traversing out of sub-menus.
+void menuLevelExit(){
+  for (uint8_t i = 3; i>=0; i--){
+    if (menuParentTree[i] > 0){
+      // 1 5 0 0
+      menuSelected = menuParentTree[i];
+      menuParentTree[i] = 0;
+      if ( i > 0 ) {
+        menuLevel = menuParentTree[i - 1];
+      } else {
+        menuLevel = menuRoot;
+      }
+      return;
+    }
+    menuLevel = menuRoot;
+    menuSelected = menuEnable;
+  }
+}
 // ====== Detect key-pad button press =======
 // Buttons change behaviour based on sub-menu.
 void checkButtonPress(){
@@ -333,39 +362,48 @@ void checkButtonPress(){
   }
   if ( btnLast != btnCurrent ){
     btnLast = btnCurrent;
-    if (btnCurrent == btnDown){
-      if (bitRead(menuBits[menuLevel],menuBitIsBranch)){
+    // Button layout for navigating menu branches
+    if (bitRead(menuBits[menuLevel],menuBitIsBranch)){
+      if (btnCurrent == btnDown){
         menuSelected = menuSelected + 1;
       }
-      if (bitRead(menuBits[menuLevel], menuBitInputYesNo)){
-        menuBoolVal = !menuBoolVal;
-      }
-    }
-    if (btnCurrent == btnUp){
-      if (bitRead(menuBits[menuLevel],menuBitIsBranch)){
+      if (btnCurrent == btnUp){
         menuSelected = menuSelected - 1;
       }
-      if (bitRead(menuBits[menuLevel], menuBitInputYesNo)){
+      if (btnCurrent == btnRight || btnCurrent == btnSelect){
+        menuLevelEnter(menuSelected);
+      }
+      if (btnCurrent == btnLeft){
+        menuLevelExit();
+      }
+    }
+
+    // Navigating a Yes/No leaf
+    if (bitRead(menuBits[menuLevel], menuBitInputYesNo)){
+      if (btnCurrent == btnDown || btnCurrent == btnUp){
         menuBoolVal = !menuBoolVal;
       }
-    }
-    if (btnCurrent == btnLeft){
-      menuLevel = menuParent;
-    }
-    if (btnCurrent == btnRight){
-      if (bitRead(menuBits[menuLevel],menuBitIsBranch)){
-        menuLevel = menuSelected;
+      if (btnCurrent == btnLeft){
+        menuLevelExit();
       }
-      if (bitRead(menuBits[menuLevel], menuBitInputYesNo)){
-        menuBoolVal = !menuBoolVal;
-      }
-    }
-    if (btnCurrent == btnSelect){
-      if (bitRead(menuBits[menuLevel],menuBitIsBranch)){
-        menuLevel = menuSelected;
-      }
-      if (bitRead(menuBits[menuLevel], menuBitInputYesNo)){
+      if (btnCurrent == btnSelect){
         setBitVal(menuLevel);
+      }
+    }
+
+    // Navigating a Number leaf
+    if (bitRead(menuBits[menuLevel], menuBitInputNumber)){
+      if (btnCurrent == btnDown && menuIntVal > 0){
+          menuIntVal -= 1;
+      }
+      if ( btnCurrent == btnUp && menuIntVal <= 254){
+          menuIntVal += 1;
+      }
+      if (btnCurrent == btnLeft){
+        menuLevelExit();
+      }
+      if (btnCurrent == btnSelect){
+        setIntVal(menuLevel);
       }
     }
     updateDisplay();
@@ -432,7 +470,7 @@ void updateDisplay(){
         menuEnd = menuRepeatDelay;
         break;
     }
-    menuParent = menuRoot;
+    //menuParent = menuRoot;
     // Show two items of current display
     if ( menuSelected > menuEnd ){
       menuSelected = menuStart;
@@ -478,10 +516,26 @@ void updateDisplay(){
     line2[0] = toupper(line2[0]);
     lcd.print(line2); 
   }
+  if (bitRead(menuBits[menuLevel], menuBitInputNumber)){
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print(line1);
+    lcd.setCursor(0,1);
+    if ( menuIntVal == 0 ){
+      strcpy(line2, 0);
+      strcat(line2, " ");
+      strcat(line2, txtDisabled);
+    } else {
+      strcpy(line2, menuIntVal);
+    }
+    lcd.print(line2);
+  }
+  /*
   if (bitRead(menuBits[menuLevel], menuBitInputYesNo)){}
   if (bitRead(menuBits[menuLevel], menuBitInputNumber)){}
   if (bitRead(menuBits[menuLevel], menuBitInputText)){}
   if (bitRead(menuBits[menuLevel], menuBitInputTime)){}
+  */
   //if (bitRead(menuBits[menuLevel], menuBitNumList)){}
   /*
   if (menuSelected >= menuActions && menuSelected <= menuSchedule){
@@ -732,6 +786,7 @@ bool getBitVal(menuItems mId){
   }
 }
 
+
 void setBitVal(menuItems mId){
   switch (mId){
     case menuEnable:
@@ -746,6 +801,7 @@ void setBitVal(menuItems mId){
     case menuRainNormallyOpen:
       return set_rain_normally_open(menuBoolVal);
       break;
+      /*
     case menuZoneEnable:
       return set_zone_is_enabled(menuBoolVal);
       break;
@@ -764,7 +820,58 @@ void setBitVal(menuItems mId){
     case menuScheduleEnable:
       return set_schedule_is_enabled(menuBoolVal);
       break;
+      */
   }
+}
+
+
+void setIntVal(menuItems mId){
+  /*
+  switch (mId){
+    case menuNumberOfZones:
+      return set_number_of_zones(menuIntVal);
+      break;
+    case menuMasterPin:
+      return set_master_pin(menuIntVal);
+      break;
+    case menuRainPin:
+      return set_rain_pin(menuIntVal);
+      break;
+    case menuRainID:
+      return set_rain_id(menuIntVal);
+      break;
+    case menuTempID:
+      return set_temp_id(menuIntVal);
+      break;
+    case menuWindID:
+      return set_wind_id(menuIntVal);
+      break;
+    case menuWeatherID:
+      return set_weather_id(menuIntVal);
+      break;
+    case menuBlowOutWait:
+      return set_blowout_wait(menuIntVal);
+      break;
+    case menuZoneRunTime:
+      return set_zone_run_time(menuIntVal);
+      break;
+    case menuZonePin:
+      return set_zone_pin(menuIntVal);
+      break;
+    case menuMoistureID:
+      return set_moisture_id(menuIntVal);
+      break;
+    case menuDryLevel:
+      return set_dry_level(menuIntVal);
+      break;
+    case menuBlowOutTime:
+      return set_blowout_time(menuIntVal);
+      break;
+    case menuBlowOutCycles:
+      return set_blowout_cycles(menuIntVal);
+      break;
+  }
+  */
 }
 
 void checkZoneTimer(){
@@ -825,6 +932,7 @@ void init_irrigation(){
 // ===== Settings =====
 
 void loadSettingsConfig(){
+  //Serial.println("Loading settings");
   _eeprom_version = EEPROM.readByte(EEPROM_VERSION + _eeprom_start_addr);
   _storebits = EEPROM.readByte(IRR_STORE_BITS + _eeprom_start_addr);
   _is_enabled = is_enabled();
@@ -844,14 +952,23 @@ bool in_eeprom(){
   return bitRead(_storebits,SETTING_BIT_IN_EEPROM);
 }
 
-void saveBit(uint8_t *dest, uint8_t bit_position, int eeprom_dest, bool val){
+//save in Ram and eeprom ( ram destination, position in ram, eeprom destinaion, value )
+void saveBit(uint8_t &dest, uint16_t bit_position, int eeprom_dest, uint8_t val){
   if (val == 1){
     bitSet(dest,bit_position);
-    EEPROM.updateByte(eeprom_dest,(uint8_t)dest);
   } else {
     bitClear(dest,bit_position);
-    EEPROM.updateByte(eeprom_dest,(uint8_t)dest);
   }
+  EEPROM.updateByte(eeprom_dest, dest);
+  Serial.print("dest: ");
+  Serial.print(dest);
+  Serial.print("; eeprom_dest: ");
+  Serial.print(eeprom_dest);
+  Serial.print("; IRR_STORE_BITS + _eeprom_start_addr: ");
+  Serial.print(IRR_STORE_BITS + _eeprom_start_addr);
+  Serial.print("; eeprom read: ");
+  uint8_t x = EEPROM.readByte(IRR_STORE_BITS + _eeprom_start_addr);
+  Serial.print(x);
 } 
 
 bool is_enabled(){
@@ -859,7 +976,7 @@ bool is_enabled(){
 }
 
 void set_is_enabled(bool val){
-  saveBit(_storebits, SETTING_BIT_ENABLE, IRR_STORE_BITS, val)
+  saveBit(_storebits, SETTING_BIT_ENABLE, IRR_STORE_BITS + _eeprom_start_addr, val);
 }
 
 bool master_valve_normally_open(){
@@ -867,7 +984,7 @@ bool master_valve_normally_open(){
 }
 
 void set_master_valve_normally_open(bool val){
-  saveBit(_storebits, SETTING_BIT_MASTER_VALVE_NORMALLY_OPEN, IRR_STORE_BITS, val)
+  saveBit(_storebits, SETTING_BIT_MASTER_VALVE_NORMALLY_OPEN, IRR_STORE_BITS + _eeprom_start_addr, val);
 }
 
 bool zone_normally_open(){
@@ -875,7 +992,7 @@ bool zone_normally_open(){
 }
 
 void set_zone_normally_open(bool val){
-  saveBit(_storebits, SETTING_BIT_ZONE_NORMALLY_OPEN, IRR_STORE_BITS, val)
+  saveBit(_storebits, SETTING_BIT_ZONE_NORMALLY_OPEN, IRR_STORE_BITS + _eeprom_start_addr, val);
 }
 
 bool rain_normally_open(){
@@ -883,7 +1000,7 @@ bool rain_normally_open(){
 }
 
 void set_rain_normally_open(bool val){
-  saveBit(_storebits, SETTING_BIT_RAIN_NORMALLY_OPEN, IRR_STORE_BITS, val)
+  saveBit(_storebits, SETTING_BIT_RAIN_NORMALLY_OPEN, IRR_STORE_BITS + _eeprom_start_addr, val);
 }
 
 
@@ -988,4 +1105,13 @@ bool schedule_is_enabled(){
   return bitRead(_schedule_storebits,SCHEDULE_BIT_ENABLED);
 }
 
-
+/*
+void bit8Set(uint8_t *value, int bit_pos){
+  uint8_t one = 1;
+  value |= (one << bit_pos);
+}
+void bit8Clear(uint8_t *value, int bit_pos){
+  uint8_t one = 1;
+  value &= ~(one << bit_pos);
+}
+*/
