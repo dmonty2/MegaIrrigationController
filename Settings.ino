@@ -137,17 +137,17 @@ void set_rain_pin(uint16_t val){
 }
 void set_rain_id(uint16_t val){
   _rain_id = val;
-  EEPROM.writeByte(IRR_RAIN_ID + _eeprom_start_addr, val);
+  EEPROM.writeInt(IRR_RAIN_ID + _eeprom_start_addr, val);
   
 }
 void set_temp_id(uint16_t val){
   _temperature_id = val;
-  EEPROM.writeByte(IRR_TEMPERATURE_ID + _eeprom_start_addr, val);
+  EEPROM.writeInt(IRR_TEMPERATURE_ID + _eeprom_start_addr, val);
   
 }
 void set_wind_id(uint16_t val){
   _wind_id = val;
-  EEPROM.writeByte(IRR_WIND_ID + _eeprom_start_addr, val);
+  EEPROM.writeInt(IRR_WIND_ID + _eeprom_start_addr, val);
   
 }
 
@@ -160,7 +160,7 @@ void set_weather_id(uint16_t val){
 // Time it takes to recharge the air compressor.
 void set_blowout_wait(uint16_t val){
   _blowout_recharge_wait = val;
-  EEPROM.writeByte(IRR_BLOWOUT_CHARGE_WAIT + _eeprom_start_addr, val);
+  EEPROM.writeInt(IRR_BLOWOUT_CHARGE_WAIT + _eeprom_start_addr, val);
 }
 
 

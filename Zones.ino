@@ -109,15 +109,15 @@ void set_zone_pin(uint16_t val){
 }
 void set_moisture_id(uint16_t val){
   _zone_moisture_id = val;
-  EEPROM.writeByte(ZONE_MOISTURE_ID + _zone_eeprom_offset, val);
+  EEPROM.writeInt(ZONE_MOISTURE_ID + _zone_eeprom_offset, val);
 }
 void set_dry_level(uint16_t val){
   _zone_is_dry_value = val;
-  EEPROM.writeByte(ZONE_IS_DRY_VALUE + _zone_eeprom_offset, val);
+  EEPROM.writeInt(ZONE_IS_DRY_VALUE + _zone_eeprom_offset, val);
 }
 void set_blowout_time(uint16_t val){
   _zone_blowout_time = val;
-  EEPROM.writeByte(ZONE_BLOWOUT_TIME + _zone_eeprom_offset, val);
+  EEPROM.writeInt(ZONE_BLOWOUT_TIME + _zone_eeprom_offset, val);
 }
 void set_blowout_cycles(uint16_t val){
   if (val >= 255){
