@@ -73,6 +73,8 @@ void initializeMenu(){
   for (idx=0; idx < 14; idx++){
     bitSet(menuBits[itemsNum[idx]],menuBitInputNumber);
   }
+  bitSet(menuBits[menuZones], menuBitIsNumList);
+  bitSet(menuBits[menuSchedules], menuBitIsNumList);
   bitSet(menuBits[menuZoneName], menuBitInputText);
   bitSet(menuBits[menuScheduleStartTime1], menuBitInputTime);
   bitSet(menuBits[menuScheduleStartTime2], menuBitInputTime);
