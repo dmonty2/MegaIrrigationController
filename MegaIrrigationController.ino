@@ -106,7 +106,7 @@ enum menuItems {
     menuActions,
     menuSettings,
     menuZones,
-    menuSchedule,
+    menuSchedules,
       menuEnable,            //Actions
       menuRunAllZones,
       menuRunSomeZones,
@@ -124,7 +124,8 @@ enum menuItems {
       menuBlowOutWait,
       menuSetTime,
       menuDefaultReset,
-      menuZoneEnable,       //Zones
+      menuZone,             // Zone number chooser
+      menuZoneEnable,       // Zones details...
       menuZoneName,
       menuZoneRunTime,
       menuZonePin,
@@ -136,7 +137,8 @@ enum menuItems {
       menuBlowOutTime,
       menuBlowOutCycles,
       menuMiniCycles,
-      menuScheduleEnable,   //Schedule
+      menuSchedule,         // Schedule number chooser
+      menuScheduleEnable,   //Schedule details...
       menuScheduleDay,
       menuScheduleZones,
       menuScheduleStartTime1,
@@ -238,6 +240,7 @@ int      _zone_eeprom_offset = 0;      // EEPROM address offset for this zone.
 
 // Schedule saved in EEPROM
 uint8_t _schedule_number = 0;    // 1 Schedule Number
+static const uint8_t _num_schedules = 4;   // 1 Up to Four schedules
 uint8_t _schedule_storebits = 0; // 1 used to store on/off bits
 
 void presentation()
