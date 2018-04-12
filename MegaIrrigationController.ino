@@ -10,7 +10,8 @@
 // ======== EEPROM =========
 // EEPROM simplify storing retrieving various data types. 
 #include <EEPROMex.h>
-#define EEPROM_VERSION 1  // track major changes to eeprom
+#define EEPROM_VERSION 2  // track major changes to eeprom
+// EEPROM defaults are usually 0 or 255, so we can detect new hardware.
 
 
 #define ZONE_NAME_SIZE 15 // Zone name size 14+NUL
@@ -18,7 +19,7 @@
 // Start of eeprom is stored in EEPROM_LOCAL_CONFIG_ADDRESS
 // "~/Arduino/libraries/MySensors/core/MyEepromAddresses.h"
 // eeprom arangement will be offset by EEPROM_LOCAL_CONFIG_ADDRESS.
-#define EEPROM_VERSION 0                               // uint8_t    1
+#define IRR_EEPROM_VERSION 0                           // uint8_t    1
 #define IRR_STORE_BITS (EEPROM_VERSION + 1)            // uint8_t    2
 #define IRR_NUM_ZONES (IRR_STORE_BITS + 1)             // uint8_t    3
 #define IRR_MASTER_VALVE_PIN (IRR_NUM_ZONES + 1)       // uint8_t    4
@@ -80,7 +81,7 @@
 #define SCHEDULE_BIT_ODD     10 // Water odd days
 #define SCHEDULE_BIT_NTH_DAY 11
 
-// ============= LCD =============
+// ============= LCD & keypad =============
 // LCD library supports broken backlight bug.
 #include <hd44780.h>
 #include <hd44780ioClass/hd44780_pinIO.h>
@@ -97,7 +98,7 @@ enum buttonItems {
   btnSelect
 };
 
-buttonItems btnLast = btnNone;
+//buttonItems btnLast = btnNone;
 buttonItems btnCurrent = btnNone;
 
 enum menuItems {
@@ -162,8 +163,8 @@ menuItems menuLevel = menuRoot;
 menuItems menuSelected = menuEnable;
 menuItems menuStart = menuEnable;
 menuItems menuEnd   = menuEnd;
-//menuItems menuParent = menuRoot;
 uint8_t menuParentTree[4] = { 0, 0, 0, 0 };
+
 
 
 
@@ -185,9 +186,16 @@ MyMessage msg_ALL (0,0);  // initate and re-use to save memory.
 
 
 // ======= Program variables =======
+#define BUTTON_DEBOUNCE 100
+#define BUTTON_AUTO_REPEAT_SLOW_RATE 400
+#define BUTTON_AUTO_REPEAT_FAST_RATE 100 
+#define BUTTON_AUTO_REPEAT_FAST_DELAY 3000 // 3s delay before stepping up auto repeat rate
 unsigned long _currentMillis = millis(); // define here so it does not redefine in the loop.
 unsigned long _previousMillis = 0;
-unsigned long _previousDebounce = 0;
+unsigned long _previousDebounceMillis = 0;
+unsigned long _autoRepeatMillis = 0;
+unsigned long _autoRepeatRate = BUTTON_AUTO_REPEAT_SLOW_RATE;
+unsigned long _autoRepeatStartMillis = 0;
 unsigned long _previousOffMillis = 0; // countdown power off timer
 
 
@@ -203,11 +211,13 @@ uint16_t _wind_id = 0;           // MySensor ID for wind.
 uint16_t _rain_id = 0;           // MySensor ID for rain.
 uint16_t _temperature_id = 0;    // MySensor ID for temperature.
 uint16_t _blowout_recharge_wait = 0; // Compressor recharge/rest wait time.
+
 // Settings in RAM
 uint8_t  _is_enabled = 0;        // Master ON OFF/rain
 uint8_t  _is_running = 0;        // System is running.
 //uint8_t  _is_enabled = 0;        // Master ON OFF/rain
 int      _eeprom_start_addr = 0; // EEPROM start address.
+
 
 // Zone saved in EEPROM
 uint8_t  _zone_number = 0;       //  1 Zone Number
@@ -219,6 +229,7 @@ uint16_t _zone_blowout_time = 0; //  4 Zone Run Time for compressed air blow out
 uint8_t  _zone_blow_cycles = 0;  //  4 Number of cycles for compressor air blow out. 
 uint16_t _zone_is_dry_value = 0; //  2 Value at which the zone is considered dry.
 uint16_t _zone_moisture_id = 0;  //  2 MySensors ID for moisture sensor.
+
 // Zone in RAM
 uint8_t  _zone_is_on = 0;              // Zone is running
 uint16_t _zone_previous_moisture = 0;  // Previous 
@@ -306,8 +317,12 @@ void blowout_zones(void){
 
 void init_irrigation(){
   int eeprom_start = EEPROM_LOCAL_CONFIG_ADDRESS + 255;
-  EEPROM.setMemPool(eeprom_start, EEPROMSizeMega);
   _eeprom_start_addr = eeprom_start;
+  EEPROM.setMemPool(eeprom_start, EEPROMSizeMega);
+  uint8_t stored_version = EEPROM.readByte(IRR_EEPROM_VERSION + _eeprom_start_addr);
+  if (stored_version == 0 || stored_version == 255){
+    defaultReset();
+  }
   loadSettingsConfig();
 }
 

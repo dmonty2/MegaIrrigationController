@@ -20,6 +20,7 @@ void loadSettingsConfig(){
 void defaultReset(){
   int i = 0;
   _storebits = 0;
+  set_eeprom_version(EEPROM_VERSION);
   set_is_enabled(1);
   set_master_valve_normally_open(1);
   set_zone_normally_open(1);
@@ -58,6 +59,11 @@ void defaultReset(){
   }
 }
 
+void set_eeprom_version(uint8_t ver){
+  _eeprom_version = ver;
+  EEPROM.writeByte(IRR_EEPROM_VERSION + _eeprom_start_addr, ver);
+}
+
 bool in_eeprom(){
   return bitRead(_storebits,SETTING_BIT_IN_EEPROM);
 }
@@ -70,15 +76,6 @@ void saveBit(uint8_t &dest, uint16_t bit_position, int eeprom_dest, uint8_t val)
     bitClear(dest,bit_position);
   }
   EEPROM.updateByte(eeprom_dest, dest);
-  Serial.print("dest: ");
-  Serial.print(dest);
-  Serial.print("; eeprom_dest: ");
-  Serial.print(eeprom_dest);
-  Serial.print("; IRR_STORE_BITS + _eeprom_start_addr: ");
-  Serial.print(IRR_STORE_BITS + _eeprom_start_addr);
-  Serial.print("; eeprom read: ");
-  uint8_t x = EEPROM.readByte(IRR_STORE_BITS + _eeprom_start_addr);
-  Serial.print(x);
 } 
 
 bool is_enabled(){
@@ -119,8 +116,8 @@ void set_number_of_zones(uint16_t val){
   }
   _num_zones = val;
   EEPROM.writeByte(IRR_NUM_ZONES + _eeprom_start_addr, val);
-  
 }
+
 void set_master_pin(uint16_t val){
   if (val >= 255){
     val = 255;
@@ -128,6 +125,7 @@ void set_master_pin(uint16_t val){
   _master_valve_pin = val;
   EEPROM.writeByte(IRR_MASTER_VALVE_PIN + _eeprom_start_addr, val);
 }
+
 void set_rain_pin(uint16_t val){
   if (val >= 255){
     val = 255;
@@ -135,11 +133,13 @@ void set_rain_pin(uint16_t val){
   _rain_sensor_pin = val;
   EEPROM.writeByte(IRR_RAIN_SESNOR_PIN + _eeprom_start_addr, val);
 }
+
 void set_rain_id(uint16_t val){
   _rain_id = val;
   EEPROM.writeInt(IRR_RAIN_ID + _eeprom_start_addr, val);
   
 }
+
 void set_temp_id(uint16_t val){
   _temperature_id = val;
   EEPROM.writeInt(IRR_TEMPERATURE_ID + _eeprom_start_addr, val);

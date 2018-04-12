@@ -97,28 +97,41 @@ void menuLevelEnter (uint8_t val){
 
 // Track traversing out of sub-menus.
 void menuLevelExit(){
-  for (uint8_t i = 3; i>=0; i--){
+  Serial.print("menuLevel:"); Serial.println(menuLevel);
+  for (uint8_t i = 3; i>=0 && i<=3; i--){
     if (menuParentTree[i] > 0){
+  Serial.print("menuParentTree["); Serial.print(i); Serial.print("] = "); Serial.println(menuParentTree[i]);
       // 1 5 0 0
       menuSelected = menuParentTree[i];
+      Serial.print("menuSelected:"); Serial.println(menuSelected);
       menuParentTree[i] = 0;
       if ( i > 0 ) {
         menuLevel = menuParentTree[i - 1];
       } else {
         menuLevel = menuRoot;
       }
+      Serial.print("menuLevel:"); Serial.println(menuLevel);
       return;
     }
     menuLevel = menuRoot;
     menuSelected = menuEnable;
   }
+  
 }
 // ====== Detect key-pad button press =======
 // Buttons change behaviour based on sub-menu.
 void checkButtonPress(){
+  if (_currentMillis - _previousDebounceMillis > BUTTON_DEBOUNCE ){
+    _previousDebounceMillis = _currentMillis;
+  } else {
+    return;
+  }
   int adc_key_in = analogRead(0);
   if (adc_key_in > 1000){
     btnCurrent = btnNone;
+    _autoRepeatRate = BUTTON_AUTO_REPEAT_SLOW_RATE;
+    _autoRepeatStartMillis = _currentMillis;
+    return;
   }
   else if (adc_key_in < 50){
     btnCurrent = btnRight;  
@@ -136,9 +149,18 @@ void checkButtonPress(){
     btnCurrent = btnSelect;
   } else {
     btnCurrent = btnNone;
+    _autoRepeatRate = BUTTON_AUTO_REPEAT_SLOW_RATE;
+    _autoRepeatStartMillis = _currentMillis;
+    return;
   }
-  if ( btnLast != btnCurrent ){
-    btnLast = btnCurrent;
+
+  // Handle Auto Repeat button speed.
+  if ( _currentMillis - _autoRepeatMillis > _autoRepeatRate ){
+    _autoRepeatMillis = _currentMillis;
+    if (_currentMillis - _autoRepeatStartMillis > BUTTON_AUTO_REPEAT_FAST_DELAY){
+      _autoRepeatRate = BUTTON_AUTO_REPEAT_FAST_RATE;  
+    }
+    //btnLast = btnCurrent;
     // Button layout for navigating menu branches
     if (bitRead(menuBits[menuLevel],menuBitIsBranch)){
       if (btnCurrent == btnDown){
@@ -227,7 +249,7 @@ void updateDisplay(){
     if ( menuSelected < menuStart ){
       menuSelected = menuEnd;
     }
-    if ( btnLast == btnRight ) {
+    if ( btnCurrent == btnRight ) {
       menuSelected = menuStart;
     }
     getMenuText(line1, menuSelected);
