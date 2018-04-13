@@ -162,7 +162,7 @@ uint16_t menuNumVal = 0;
 char menuTextVal[ZONE_NAME_SIZE];
 
 menuItems menuLevel = menuRoot;
-menuItems menuSelected = menuEnable;
+menuItems menuSelected = menuActions;
 menuItems menuStart = menuEnable;
 menuItems menuEnd   = menuEnd;
 uint8_t menuParentTree[4] = { 0, 0, 0, 0 };

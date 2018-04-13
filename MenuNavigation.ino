@@ -1,5 +1,5 @@
 // Dictionary to only store strings/words once in memory and join them together.
-// This may not be worth the overhead of the functions needed to the strings.
+// This may not be worth the overhead of the functions needed to join strings.
 // TODO: if there is enough free memory I may later change these from char
 //       arrays to String objects.  In order to make the code more readable.
 static const char txtActions[8] = "actions";
@@ -50,32 +50,45 @@ static const char txtDisabled[9] = "disabled";
 static const char txtDefaultReset[14] = "default reset";
 
 
-// Setup Menu bits
+// Setup Menu flag type bits
 void initializeMenu(){
   // Clear the bits
   int idx = 0;
+  int num_items = 0;
   for (idx = menuRoot; idx <= menuLast; idx++){
     menuBits[idx] = 0;
   }
-  int itemsBranch[3] = {menuRoot,menuActions,menuSettings,menuZone,menuSchedule};
-  for (idx=0; idx < 3; idx++){
+  // Branch Menu Items
+  num_items = 5;
+  int itemsBranch[num_items] = {menuRoot,menuActions,menuSettings,menuZone,menuSchedule};
+  for (idx=0; idx < num_items; idx++){
     bitSet(menuBits[itemsBranch[idx]],menuBitIsBranch);
   }
-  int itemsYN[11] = { menuEnable, menuMasterNormallyOpen, menuZoneNormallyOpen, menuRainNormallyOpen,
+  // Yes/No Menu Items
+  num_items = 11;
+  int itemsYN[num_items] = { menuEnable, menuMasterNormallyOpen, menuZoneNormallyOpen, menuRainNormallyOpen,
                       menuDefaultReset, menuZoneEnable, menuUseForecast, menuAvoidWind, menuAvoidFreeze,
                       menuMiniCycles, menuScheduleEnable };
-  for (idx=0; idx < 11; idx++){
+  for (idx=0; idx < num_items; idx++){
     bitSet(menuBits[itemsYN[idx]],menuBitInputYesNo);
   }
-  int itemsNum[14] = { menuNumberOfZones, menuMasterPin, menuRainPin, menuRainID, menuTempID, menuWindID,
+  // Number Menu Items
+  num_items = 14;
+  int itemsNum[num_items] = { menuNumberOfZones, menuMasterPin, menuRainPin, menuRainID, menuTempID, menuWindID,
                        menuWeatherID, menuBlowOutWait, menuZoneRunTime, menuZonePin, menuMoistureID,
                        menuDryLevel, menuBlowOutTime, menuBlowOutCycles };
-  for (idx=0; idx < 14; idx++){
+  for (idx=0; idx < num_items; idx++){
     bitSet(menuBits[itemsNum[idx]],menuBitInputNumber);
   }
+
+  // Number Zones/Schedules
   bitSet(menuBits[menuZones], menuBitIsNumList);
   bitSet(menuBits[menuSchedules], menuBitIsNumList);
+
+  // Text item
   bitSet(menuBits[menuZoneName], menuBitInputText);
+
+  // Time item
   bitSet(menuBits[menuScheduleStartTime1], menuBitInputTime);
   bitSet(menuBits[menuScheduleStartTime2], menuBitInputTime);
 }
@@ -93,7 +106,7 @@ void menuLevelEnter (uint8_t val){
         menuNumVal = getNumVal(menuLevel); 
       }
       if (bitRead(menuBits[menuLevel], menuBitIsNumList)){
-        menuNumVal = 1; 
+        menuNumVal = 1;
       }
       return;
     }
@@ -160,86 +173,101 @@ void checkButtonPress(){
     if (_currentMillis - _autoRepeatStartMillis > BUTTON_AUTO_REPEAT_FAST_DELAY){
       _autoRepeatRate = BUTTON_AUTO_REPEAT_FAST_RATE;  
     }
-    //btnLast = btnCurrent;
-    // Button layout for navigating menu branches
-    if (bitRead(menuBits[menuLevel],menuBitIsBranch)){
-      if (btnCurrent == btnDown){
-        menuSelected = menuSelected + 1;
-      }
-      if (btnCurrent == btnUp){
-        menuSelected = menuSelected - 1;
-      }
-      if (btnCurrent == btnRight || btnCurrent == btnSelect){
-        menuLevelEnter(menuSelected);
-      }
-      if (btnCurrent == btnLeft){
-        menuLevelExit();
-      }
-    }
 
-    // Navigating a Yes/No leaf
-    if (bitRead(menuBits[menuLevel], menuBitInputYesNo)){
-      if (btnCurrent == btnDown || btnCurrent == btnUp){
-        menuBoolVal = !menuBoolVal;
-      }
-      if (btnCurrent == btnLeft){
-        menuLevelExit();
-      }
-      if (btnCurrent == btnSelect){
-        setBitVal(menuLevel);
-      }
+    // Navigation keys change based on type of input.
+    if(bitRead(menuBits[menuLevel],         menuBitIsBranch)){
+      navigateBranch();
+    } else if (bitRead(menuBits[menuLevel], menuBitInputYesNo)){
+      naviagteYesNo();
+    } else if (bitRead(menuBits[menuLevel], menuBitInputNumber)){
+      navigateNumberChooser();
+    } else if (bitRead(menuBits[menuLevel], menuBitIsNumList)){
+      navigateZoneSchedule();
     }
-
-    // Navigating a Number chooser e.g. ID, PIN, etc. 
-    if (bitRead(menuBits[menuLevel], menuBitInputNumber)){
-      if (btnCurrent == btnDown && menuNumVal > 0){
-          menuNumVal -= 1;
-      }
-      if ( btnCurrent == btnUp && menuNumVal <= 65000){
-          menuNumVal += 1;
-      }
-      if (btnCurrent == btnLeft){
-        menuLevelExit();
-      }
-      if (btnCurrent == btnSelect){
-        setNumVal(menuLevel);
-      }
-    }
-
-    // Navigating a List of Zones or Schedules
-    if (bitRead(menuBits[menuLevel], menuBitIsNumList)){
-      if (btnCurrent == btnDown && menuNumVal > 0){
-          menuNumVal -= 1;
-      }
-      uint8_t max_num = 1;
-      if ( menuLevel == menuZones ){ max_num = _num_zones; }
-      if ( menuLevel == menuSchedules ){ max_num = _num_schedules; }
-      if ( btnCurrent == btnUp && menuNumVal <= max_num ){
-          menuNumVal += 1;
-      }
-      if ( menuNumVal <= 0 || menuNumVal > max_num ){
-        menuNumVal = 1;
-      }
-      if (btnCurrent == btnLeft){
-        menuLevelExit();
-      }
-      if (btnCurrent == btnRight){
-        if (menuLevel == menuZones){
-          loadZoneConfig(menuNumVal);
-          menuLevelEnter(menuZone);
-        }
-        if (menuLevel == menuSchedules){
-          loadScheduleConfig(menuNumVal);
-          menuLevelEnter(menuSchedule);
-        }
-      }
-    }
-
+    
     updateDisplay();
   }
 }
 
+// Button layout for navigating menu branches
+void navigateBranch(){
+  if (btnCurrent == btnDown){
+    menuSelected = menuSelected + 1;
+    if ( menuSelected > menuEnd ){
+      menuSelected = menuStart;
+    }
+  }
+  if (btnCurrent == btnUp){
+    menuSelected = menuSelected - 1;
+    if ( menuSelected < menuStart ){
+      menuSelected = menuEnd;
+    }
+  }
+  if (btnCurrent == btnRight || btnCurrent == btnSelect){
+    menuLevelEnter(menuSelected);
+  }
+  if (btnCurrent == btnLeft){
+    menuLevelExit();
+  }
+}
 
+// Navigating a Yes/No leaf
+void naviagteYesNo(){ 
+  if (btnCurrent == btnDown || btnCurrent == btnUp){
+    menuBoolVal = !menuBoolVal;
+  }
+  if (btnCurrent == btnLeft){
+    menuLevelExit();
+  }
+  if (btnCurrent == btnSelect){
+    setBitVal(menuLevel);
+  }
+}
+
+// Navigating a Number chooser e.g. ID, PIN, etc. 
+void navigateNumberChooser(){
+  if (btnCurrent == btnDown && menuNumVal > 0){
+      menuNumVal -= 1;
+  }
+  if ( btnCurrent == btnUp && menuNumVal <= 65000){
+      menuNumVal += 1;
+  }
+  if (btnCurrent == btnLeft){
+    menuLevelExit();
+  }
+  if (btnCurrent == btnSelect){
+    setNumVal(menuLevel);
+  }
+}
+
+// Navigating a List of Zones or Schedules
+void navigateZoneSchedule(){
+  if (btnCurrent == btnDown && menuNumVal > 1){
+      menuNumVal -= 1;
+  }
+  uint8_t max_num = 1;
+  if ( menuLevel == menuZones ){ max_num = _num_zones; }
+  if ( menuLevel == menuSchedules ){ max_num = _num_schedules; }
+  if ( btnCurrent == btnUp && menuNumVal < max_num ){
+      menuNumVal += 1;
+  }
+  if ( menuNumVal <= 0 || menuNumVal > max_num ){
+    menuNumVal = 1;
+  }
+  if (btnCurrent == btnLeft){
+    menuLevelExit();
+  }
+  if (btnCurrent == btnRight){
+    if (menuLevel == menuZones){
+      loadZoneConfig(menuNumVal);
+      menuLevelEnter(menuZone);
+    }
+    if (menuLevel == menuSchedules){
+      //loadScheduleConfig(menuNumVal);
+      menuLevelEnter(menuSchedule);
+    }
+  }
+}
 /*
 void menuBitRead(menuItems menuIdx, menuItemBits menuBitPos){
   bitRead(menuBitProperties[menuIdx], menuBitPos);
@@ -253,7 +281,7 @@ void updateDisplay(){
     switch (menuLevel) {
       case menuRoot:
         menuStart = menuActions;
-        menuEnd = menuSchedule;
+        menuEnd = menuSchedules;
         break;
       case menuActions:
         menuStart = menuEnable;
@@ -370,14 +398,8 @@ void updateDisplay(){
     lcd.setCursor(0,0);
     lcd.print(line1);
     lcd.setCursor(0,1);
-    if ( menuNumVal == 0 ){
-      strcpy(line2, 0);
-      strcat(line2, " ");
-      strcat(line2, txtDisabled);
-    } else {
-      strcpy(line2, menuNumVal);
-    }
-    lcd.print(line2);
+    lcd.print("> ");
+    lcd.print(menuNumVal);
   }
 
 }
@@ -395,7 +417,13 @@ void getMenuText(char *dest, menuItems mId){
     case menuZones:
       strcpy(dest, txtZones);
       break;
+    case menuZone:
+      strcpy(dest, txtZone);
+      break;
     case menuSchedules:
+      strcpy(dest, txtSchedule);
+      break;
+    case menuSchedule:
       strcpy(dest, txtSchedule);
       break;
     case menuEnable:

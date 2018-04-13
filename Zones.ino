@@ -29,7 +29,6 @@ void updateZoneConfig(){
   EEPROM.updateInt(ZONE_MOISTURE_ID + _zone_eeprom_offset,(uint8_t)_zone_moisture_id);
 }
 
-
 void water_on(){
   _is_running = 1;
   if(_zone_pin >= 1){
