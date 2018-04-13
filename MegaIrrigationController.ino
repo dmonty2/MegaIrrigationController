@@ -1,7 +1,11 @@
 /*
  * Description: Irrigation Controller with MySensors integration
  * Author: Dean Montgomery
- * Date: March 19, 2018
+ * Date: April 13, 2018
+ * 
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * version 2 as published by the Free Software Foundation.
  */
 
 //#define NUM_ZONES 5
@@ -31,6 +35,16 @@
 // With spare (7 bytes).
 #define IRR_EEPROM_BYTES  20 // EEPROM Bytes needed for IRR_*
 
+// Fixed number of schedules so the rest of the eeprom can be used for zones.
+#define NUMBER_OF_SCHEDULES 4
+#define SCHEDULE_NUM 0                              //  1 uint8_t
+#define SCHEDULE_STORE_BITS ( SCHEDULE_NUM + 1 )    //  3 uint16_t
+#define SCHEDULE_ZONES ( SCHEDULE_STORE_BITS + ? )  //  5 uint16_t 16 zones.
+#define SCHEDULE_START1 ( SCHEDULE_ZONES + ? )      //  start time e.g. 6AM
+#define SCHEDULE_START2 ( SCHEDULE_START1 + ? )     //  start time 2 e.g. 6PM
+#define SCHEDULE_REPEAT_DELAY ( SCHEDULE_START2 + ? ) // delay before repeating 0.
+
+
 #define ZONE_NUM 0                                  //  1 uint8_t
 #define ZONE_STORE_BITS (ZONE_NUM + 1)              //  2 uint8_t
 #define ZONE_PIN (ZONE_STORE_BITS + 1)              //  3 uint8_t
@@ -42,13 +56,6 @@
 #define ZONE_MOISTURE_ID (ZONE_IS_DRY_VALUE + 2)    // 26 uint16_t
 // With spare (4 bytes)
 #define ZONE_EEPROM_BYTES 30 // EEPROM Bytes needed for each zone;
-
-#define SCHEDULE_NUM 0                              //  1 uint8_t
-#define SCHEDULE_STORE_BITS ( SCHEDULE_NUM + 1 )    //  3 uint16_t
-#define SCHEDULE_ZONES ( SCHEDULE_STORE_BITS + ? )  //  5 uint16_t 16 zones.
-#define SCHEDULE_START1 ( SCHEDULE_ZONES + ? )      //  start time e.g. 6AM
-#define SCHEDULE_START2 ( SCHEDULE_START1 + ? )     //  start time 2 e.g. 6PM
-#define SCHEDULE_REPEAT_DELAY ( SCHEDULE_START2 + ? ) // delay before repeating 0.
 
 
 // Map Store bits for Settings _storebits
@@ -185,6 +192,11 @@ uint8_t menuParentTree[4] = { 0, 0, 0, 0 };
 MyMessage msg_ALL (0,0);  // initate and re-use to save memory.
 #define LONG_WAIT 750                    // long wait between signals
 #define SHORT_WAIT 50                    // short wait between signals
+
+// ======= Time and Alarms =======
+// TODO: https://github.com/mysensors/MySensorsArduinoExamples/blob/master/examples/TimeAwareSensor/TimeAwareSensor.ino
+#include <TimeLib.h>
+#include <TimeAlarms.h>
 
 
 // ======= Program variables =======

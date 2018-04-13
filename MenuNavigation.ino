@@ -1,7 +1,17 @@
+/*
+ * Description: Irrigation Controller with MySensors integration
+ * Author: Dean Montgomery
+ * 
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * version 2 as published by the Free Software Foundation.
+ */
+
 // Dictionary to only store strings/words once in memory and join them together.
 // This may not be worth the overhead of the functions needed to join strings.
 // TODO: if there is enough free memory I may later change these from char
 //       arrays to String objects.  In order to make the code more readable.
+//       Also test progmem storage.
 static const char txtActions[8] = "actions";
 static const char txtSettings[9] = "settings";
 static const char txtEnable[7] = "enable";

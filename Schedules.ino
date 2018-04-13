@@ -1,4 +1,13 @@
+/*
+ * Description: Irrigation Controller with MySensors integration
+ * Author: Dean Montgomery
+ * 
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * version 2 as published by the Free Software Foundation.
+ */
 
+ 
 bool schedule_is_enabled(){
   return bitRead(_schedule_storebits,SCHEDULE_BIT_ENABLED);
 }

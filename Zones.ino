@@ -1,3 +1,12 @@
+/*
+ * Description: Irrigation Controller with MySensors integration
+ * Author: Dean Montgomery
+ * 
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * version 2 as published by the Free Software Foundation.
+ */
+
 // Caculate each zone's EEPROM area.
 void set_zone_eeprom_offset(){
   _zone_eeprom_offset = (int)(_eeprom_start_addr + (((int)_zone_number - 1) * ZONE_EEPROM_BYTES));
