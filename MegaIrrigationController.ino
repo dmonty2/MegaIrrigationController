@@ -37,14 +37,16 @@
 
 // Fixed number of schedules so the rest of the eeprom can be used for zones.
 #define NUMBER_OF_SCHEDULES 4
-#define SCHEDULE_NUM 0                              //  1 uint8_t
-#define SCHEDULE_STORE_BITS ( SCHEDULE_NUM + 1 )    //  3 uint16_t
-#define SCHEDULE_ZONES ( SCHEDULE_STORE_BITS + ? )  //  5 uint16_t 16 zones.
-#define SCHEDULE_START1 ( SCHEDULE_ZONES + ? )      //  start time e.g. 6AM
-#define SCHEDULE_START2 ( SCHEDULE_START1 + ? )     //  start time 2 e.g. 6PM
-#define SCHEDULE_REPEAT_DELAY ( SCHEDULE_START2 + ? ) // delay before repeating 0.
+#define SCHEDULE_NUM 0                                       //  1 uint8_t
+#define SCHEDULE_STORE_BITS ( SCHEDULE_NUM + 1 )             //  3 uint16_t
+#define SCHEDULE_START_TIME_1 ( SCHEDULE_STORE_BITS + 2 )    //  5 uint16_t start time e.g. 6AM (minutes since midnight)
+#define SCHEDULE_START_TIME_2 ( SCHEDULE_START_TIME_1 + 2 )  //  7 uint16_t start time 2 e.g. 6PM (minutes since midnight)
+#define SCHEDULE_REPEAT_DELAY ( SCHEDULE_START_TIME_2 + 2 )  //  9 uint16_t delay before repeating 0.
+#define SCHEDULE_EVERY_NTH_DAY ( SCHEDULE_REPEAT_DELAY + 2 ) //  10 unit8_t every nth day
+#define SCHEDULE_ZONES ( SCHEDULE_EVERY_NTH_DAY + 1 )        //  14 uint32_t 32 zones.
+#define SCHEDULE_EEPROM_BYPTES 16 // EEPROM Bytes needed for each schedule with 2 spare bites for growth
 
-
+//
 #define ZONE_NUM 0                                  //  1 uint8_t
 #define ZONE_STORE_BITS (ZONE_NUM + 1)              //  2 uint8_t
 #define ZONE_PIN (ZONE_STORE_BITS + 1)              //  3 uint8_t
@@ -252,8 +254,12 @@ int      _zone_eeprom_offset = 0;      // EEPROM address offset for this zone.
 
 // Schedule saved in EEPROM
 uint8_t _schedule_number = 0;    // 1 Schedule Number
-static const uint8_t _num_schedules = 4;   // 1 Up to Four schedules
 uint8_t _schedule_storebits = 0; // 1 used to store on/off bits
+int _schedule_eeprom_offset = 0; // EEPROM address offset for this schedule
+
+// Schedule in RAM
+bool _timeReceived = false; // Tracking Time
+unsigned long _lastTimeRequest=0;
 
 void presentation()
 {
@@ -274,6 +280,7 @@ void setup(){
   lcd.setCursor(3,1);
   lcd.print("Controller");
   initializeMenu();
+  requestTime();
 }
 
 void loop(){
@@ -284,8 +291,19 @@ void loop(){
     checkSensors();     // Check moisture, rain, wind, temp
     checkSchedule();    // Start Time for water cycle.
   }
+  // If time not received then 10s requests, else request time every hour.
+  if ((!_timeReceived && (_currentMillis - _lastTimeRequest) > (10UL*1000UL))
+    || (_timeReceived && (_currentMillis - _lastTimeRequest) > (60UL*1000UL*60UL))) {
+    requestTime();  
+    _lastTimeRequest = _currentMillis;
+  }
 }
 
+// receive time from Controller.
+void receiveTime(unsigned long time) {
+  setTime(time);
+  _timeReceived = true;
+}
 
 void checkZoneTimer(){
   if (_is_running == 1){
