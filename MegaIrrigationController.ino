@@ -267,7 +267,6 @@ bool _timeReceived = false; // Tracking Time
 unsigned long _lastTimeRequest=0;
 // Schedule timers
 struct schTracker {
-  bool enabled;
   bool is_running;
   unsigned long next_start;
 }

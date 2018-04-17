@@ -10,9 +10,8 @@
 void initScheduleConfig(){
   for (uint8_t i = 0; i < NUMBER_OF_SCHEDULES; i++ ){
     loadScheduleConfig(i);
-    scheduleTracker[i].enabled = schedule_is_enabled();
     scheduleTracker[i].is_running = 0;
-    scheduleTracker[i].next_start = calculate_next_start();
+    scheduleTracker[i].next_start = calculate_next_start(); // 0 = disabled.
   }
 }
  
