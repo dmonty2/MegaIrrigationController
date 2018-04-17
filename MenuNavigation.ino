@@ -257,7 +257,7 @@ void navigateZoneSchedule(){
   }
   uint8_t max_num = 1;
   if ( menuLevel == menuZones ){ max_num = _num_zones; }
-  if ( menuLevel == menuSchedules ){ max_num = _num_schedules; }
+  if ( menuLevel == menuSchedules ){ max_num = NUMBER_OF_SCHEDULES; }
   if ( btnCurrent == btnUp && menuNumVal < max_num ){
       menuNumVal += 1;
   }

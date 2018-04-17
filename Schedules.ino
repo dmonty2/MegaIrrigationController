@@ -44,8 +44,31 @@ void set_schedule_water_any_day(bool val){
   saveBit(_schedule_storebits, SCHEDULE_BIT_ANY_DAY, SCHEDULE_STORE_BITS + _schedule_eeprom_offset, val);
 }
 
-bool schedule_water_sun(){
+bool schedule_water_day(){
   return bitRead(_schedule_storebits,SCHEDULE_BIT_SUN);
+}
+
+bool is_water_day(){
+  int day_of_week = weekday();
+  int day_of_month = day();
+  if (bitRead(_schedule_storebits,SCHEDULE_BIT_ANY_DAY)){
+    return true;
+  }
+  if ( bitRead(_schedule_storebits, day_of_week) ){
+    return true;
+  }
+  if ( bitRead(_schedule_storebits, SCHEDULE_BIT_EVEN) && (day_of_month%2 == 0) ){
+    return true;
+  }
+  if ( bitRead(_schedule_storebits, SCHEDULE_BIT_ODD) && (day_of_month%2 == 1) ){
+    return true;
+  }
+  if ( bitRead(_schedule_storebits, SCHEDULE_BIT_NTH_DAY) &&
+              ( _schedule_every_nth_day > 0 ) &&
+              ( day_of_month % _schedule_every_nth_day == 0 )){
+    return true;
+  }
+  return false;
 }
 
 void set_schedule_water_sun(bool val){

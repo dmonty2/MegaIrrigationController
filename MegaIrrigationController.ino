@@ -44,7 +44,7 @@
 #define SCHEDULE_REPEAT_DELAY ( SCHEDULE_START_TIME_2 + 2 )  //  9 uint16_t delay before repeating 0.
 #define SCHEDULE_EVERY_NTH_DAY ( SCHEDULE_REPEAT_DELAY + 2 ) //  10 unit8_t every nth day
 #define SCHEDULE_ZONES ( SCHEDULE_EVERY_NTH_DAY + 1 )        //  14 uint32_t 32 zones.
-#define SCHEDULE_EEPROM_BYPTES 16 // EEPROM Bytes needed for each schedule with 2 spare bites for growth
+#define SCHEDULE_EEPROM_BYTES 16 // EEPROM Bytes needed for each schedule with 2 spare bites for growth
 
 //
 #define ZONE_NUM 0                                  //  1 uint8_t
@@ -78,14 +78,14 @@
 
 // Map Store bits for Schedule
 #define SCHEDULE_BIT_ENABLED  0 // Set to 1 to enable
-#define SCHEDULE_BIT_ANY_DAY  1 // Water any/every day
-#define SCHEDULE_BIT_SUN      2
-#define SCHEDULE_BIT_MON      3
-#define SCHEDULE_BIT_TUE      4
-#define SCHEDULE_BIT_WED      5
-#define SCHEDULE_BIT_THU      6
-#define SCHEDULE_BIT_FRI      7
-#define SCHEDULE_BIT_SAT      8
+#define SCHEDULE_BIT_SUN      1 // First day of week bit 1 is also 1 : )
+#define SCHEDULE_BIT_MON      2
+#define SCHEDULE_BIT_TUE      3
+#define SCHEDULE_BIT_WED      4
+#define SCHEDULE_BIT_THU      5
+#define SCHEDULE_BIT_FRI      6
+#define SCHEDULE_BIT_SAT      7
+#define SCHEDULE_BIT_ANY_DAY  8 // Water any/every day
 #define SCHEDULE_BIT_EVEN     9 // Water even days
 #define SCHEDULE_BIT_ODD     10 // Water odd days
 #define SCHEDULE_BIT_NTH_DAY 11
@@ -255,6 +255,11 @@ int      _zone_eeprom_offset = 0;      // EEPROM address offset for this zone.
 // Schedule saved in EEPROM
 uint8_t _schedule_number = 0;    // 1 Schedule Number
 uint8_t _schedule_storebits = 0; // 1 used to store on/off bits
+uint16_t _schedule_start_time_1 = 0; // 1st start time
+uint16_t _schedule_start_time_2 = 0; // 2nd start time
+uint16_t _schedule_repeat_delay = 0; // repeat delay 0 = is no repeats.
+uint8_t _schedule_every_nth_day = 0; // every nth day starting on 1st of month
+uint32_t _schedule_zones = 0;        // bit toggle which zones to water on this schedule
 int _schedule_eeprom_offset = 0; // EEPROM address offset for this schedule
 
 // Schedule in RAM
