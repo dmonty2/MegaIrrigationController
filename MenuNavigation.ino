@@ -307,7 +307,7 @@ void updateDisplay(){
         break;
       case menuSchedule:
         menuStart = menuScheduleEnable;
-        menuEnd = menuRepeatDelay;
+        menuEnd = menuScheduleRepeatDelay;
         break;
     }
     // Show two items of current display
@@ -606,7 +606,7 @@ void getMenuText(char *dest, menuItems mId){
       strcat(dest, txtTime);
       strcat(dest, "2");
       break;
-    case menuRepeatDelay:
+    case menuScheduleRepeatDelay:
       strcpy(dest, txtRepeat);
       strcat(dest, " ");
       strcat(dest, txtDelay);

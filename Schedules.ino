@@ -7,11 +7,19 @@
  * version 2 as published by the Free Software Foundation.
  */
 
+void initScheduleConfig(){
+  for (uint8_t i = 0; i < NUMBER_OF_SCHEDULES; i++ ){
+    loadScheduleConfig(i);
+    scheduleTracker[i].enabled = schedule_is_enabled();
+    scheduleTracker[i].is_running = 0;
+    scheduleTracker[i].next_start = calculate_next_start();
+  }
+}
  
 void loadScheduleConfig(uint8_t num){
-  _schedule_number = num;
+  _schedule_number = num; // zero based
   set_schedule_eeprom_offset();
-  _schedule_storebits = EEPROM.readByte(SCHEDULE_STORE_BITS + _zone_eeprom_offset);
+  _schedule_storebits = EEPROM.readByte(SCHEDULE_STORE_BITS + _schedule_eeprom_offset);
   /*_zone_pin = EEPROM.readByte(ZONE_PIN + _zone_eeprom_offset);
   EEPROM.readBlock<char>(ZONE_NAME + _zone_eeprom_offset, _zone_name, sizeof(_zone_name));
   _zone_run_time = EEPROM.readByte(ZONE_RUNTIME + _zone_eeprom_offset);
@@ -24,7 +32,7 @@ void loadScheduleConfig(uint8_t num){
 
 // Caculate each zone's EEPROM area.
 void set_schedule_eeprom_offset(){
-  _schedule_eeprom_offset = (int)(_eeprom_start_addr + (((int)_schedule_number - 1) * SCHEDULE_EEPROM_BYTES));
+  _schedule_eeprom_offset = (int)(_eeprom_start_addr + IRR_EEPROM_BYTES + (((int)_schedule_number) * SCHEDULE_EEPROM_BYTES));
 }
 
 bool schedule_is_enabled(){
@@ -46,6 +54,17 @@ void set_schedule_water_any_day(bool val){
 
 bool schedule_water_day(){
   return bitRead(_schedule_storebits,SCHEDULE_BIT_SUN);
+}
+
+uint16_t schedule_start_time1(){
+  return EEPROM.readInt(IRR_WIND_ID + _eeprom_start_addr);
+}
+
+void set_schedule_start_time1(uint16_t val){
+  EEPROM.writeInt(SCHEDULE_START_TIME_1 + _schedule_eeprom_offset, val);
+}
+void set_schedule_start_time2(uint16_t val){
+  EEPROM.writeInt(SCHEDULE_START_TIME_2 + _schedule_eeprom_offset, val);
 }
 
 bool is_water_day(){
@@ -70,7 +89,15 @@ bool is_water_day(){
   }
   return false;
 }
-
+unsigned long calculate_next_start(){
+  if (schedule_is_enabled()){
+    // calculate hour/minutes into minutes since midnight
+    // if _schedule_start_time_1 > now and water today then water
+    // if _schedule_start_time_1 > bla bla TODO
+  } else {
+    return 0;
+  }
+}
 void set_schedule_water_sun(bool val){
   saveBit(_schedule_storebits, SCHEDULE_BIT_SUN, SCHEDULE_STORE_BITS + _schedule_eeprom_offset, val);
 }

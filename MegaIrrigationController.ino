@@ -36,7 +36,7 @@
 #define IRR_EEPROM_BYTES  20 // EEPROM Bytes needed for IRR_*
 
 // Fixed number of schedules so the rest of the eeprom can be used for zones.
-#define NUMBER_OF_SCHEDULES 4
+#define NUMBER_OF_SCHEDULES 4                                //  Changing this requires resetting eeprom as zones eprom saves follow after.
 #define SCHEDULE_NUM 0                                       //  1 uint8_t
 #define SCHEDULE_STORE_BITS ( SCHEDULE_NUM + 1 )             //  3 uint16_t
 #define SCHEDULE_START_TIME_1 ( SCHEDULE_STORE_BITS + 2 )    //  5 uint16_t start time e.g. 6AM (minutes since midnight)
@@ -152,7 +152,7 @@ enum menuItems {
       menuScheduleZones,
       menuScheduleStartTime1,
       menuScheduleStartTime2,
-      menuRepeatDelay,
+      menuScheduleRepeatDelay,
       menuLast
 };
 // Last menuItem in above enum is used to set settings array length.
@@ -265,6 +265,14 @@ int _schedule_eeprom_offset = 0; // EEPROM address offset for this schedule
 // Schedule in RAM
 bool _timeReceived = false; // Tracking Time
 unsigned long _lastTimeRequest=0;
+// Schedule timers
+struct schTracker {
+  bool enabled;
+  bool is_running;
+  unsigned long next_start;
+}
+schTracker scheduleTracker[NUMBER_OF_SCHEDULES];
+
 
 void presentation()
 {
@@ -362,6 +370,8 @@ void init_irrigation(){
     defaultReset();
   }
   loadSettingsConfig();
+  initScheduleConfig();
+  initZoneConfig();
 }
 
 

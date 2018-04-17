@@ -7,6 +7,10 @@
  * version 2 as published by the Free Software Foundation.
  */
 
+void initZoneConfig(){
+  
+}
+
 // Caculate each zone's EEPROM area.
 void set_zone_eeprom_offset(){
   _zone_eeprom_offset = (int)(_eeprom_start_addr + (((int)_zone_number - 1) * ZONE_EEPROM_BYTES));
