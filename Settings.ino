@@ -7,6 +7,7 @@
  * version 2 as published by the Free Software Foundation.
  */
 
+// Called from menu.
 void loadSettingsConfig(){
   //Serial.println("Loading settings");
   _eeprom_version = EEPROM.readByte(EEPROM_VERSION + _eeprom_start_addr);
@@ -84,6 +85,25 @@ void saveBit(uint8_t &dest, uint16_t bit_position, int eeprom_dest, uint8_t val)
     bitClear(dest,bit_position);
   }
   EEPROM.updateByte(eeprom_dest, dest);
+}
+
+//save in Ram and eeprom ( ram destination, position in ram, eeprom destinaion, value )
+void save16Bit(uint16_t &dest, uint16_t bit_position, int eeprom_dest, uint8_t val){
+  if (val == 1){
+    bitSet(dest,bit_position);
+  } else {
+    bitClear(dest,bit_position);
+  }
+  EEPROM.updateInt(eeprom_dest, dest);
+}
+ 
+void save32Bit(uint32_t &dest, uint16_t bit_position, int eeprom_dest, uint8_t val){
+  if (val == 1){
+    bitSet(dest,bit_position);
+  } else {
+    bitClear(dest,bit_position);
+  }
+  EEPROM.updateLong(eeprom_dest, dest);
 } 
 
 bool is_enabled(){

@@ -254,7 +254,7 @@ int      _zone_eeprom_offset = 0;      // EEPROM address offset for this zone.
 
 // Schedule saved in EEPROM
 uint8_t _schedule_number = 0;    // 1 Schedule Number
-uint8_t _schedule_storebits = 0; // 1 used to store on/off bits
+uint16_t _schedule_storebits = 0; // 1 used to store on/off bits
 uint16_t _schedule_start_time_1 = 0; // 1st start time
 uint16_t _schedule_start_time_2 = 0; // 2nd start time
 uint16_t _schedule_repeat_delay = 0; // repeat delay 0 = is no repeats.

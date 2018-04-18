@@ -7,6 +7,7 @@
  * version 2 as published by the Free Software Foundation.
  */
 
+// Initialize schedule timer.
 void initScheduleConfig(){
   for (uint8_t i = 0; i < NUMBER_OF_SCHEDULES; i++ ){
     loadScheduleConfig(i);
@@ -17,24 +18,29 @@ void initScheduleConfig(){
     // next_start1 != 0 && current > next_start1; then water.
   }
 }
- 
+
+// Called from menu to populate the menu values
 void loadScheduleConfig(uint8_t num){
-  _schedule_number = num; // zero based
+  _schedule_number = num;
   set_schedule_eeprom_offset();
   _schedule_storebits = EEPROM.readByte(SCHEDULE_STORE_BITS + _schedule_eeprom_offset);
-  /*_zone_pin = EEPROM.readByte(ZONE_PIN + _zone_eeprom_offset);
-  EEPROM.readBlock<char>(ZONE_NAME + _zone_eeprom_offset, _zone_name, sizeof(_zone_name));
-  _zone_run_time = EEPROM.readByte(ZONE_RUNTIME + _zone_eeprom_offset);
-  _zone_blowout_time = EEPROM.readInt(ZONE_BLOWOUT_TIME + _zone_eeprom_offset);
-  _zone_blow_cycles = EEPROM.readByte(ZONE_BLOWOUT_CYCLES + _zone_eeprom_offset);
-  _zone_is_dry_value = EEPROM.readInt(ZONE_IS_DRY_VALUE + _zone_eeprom_offset);
-  _zone_moisture_id = EEPROM.readInt(ZONE_MOISTURE_ID + _zone_eeprom_offset);
-  */
+  _schedule_start_time_1 = EEPROM.readInt(SCHEDULE_START_TIME_1 + _schedule_eeprom_offset);
+  _schedule_start_time_2 = EEPROM.readInt(SCHEDULE_START_TIME_2 + _schedule_eeprom_offset);
+  _schedule_repeat_delay = EEPROM.readInt(SCHEDULE_REPEAT_DELAY + _schedule_eeprom_offset);
+  _schedule_every_nth_day = EEPROM.readInt(SCHEDULE_EVERY_NTH_DAY + _schedule_eeprom_offset);
+  _schedule_zones = EEPROM.readLong(SCHEDULE_ZONES + _schedule_eeprom_offset);
 }
 
 // Caculate each zone's EEPROM area.
 void set_schedule_eeprom_offset(){
-  _schedule_eeprom_offset = (int)(_eeprom_start_addr + IRR_EEPROM_BYTES + (((int)_schedule_number) * SCHEDULE_EEPROM_BYTES));
+  // set num to zero based with floor of 0;
+  int num = _schedule_number;
+  num -= 1;
+  if ( num <= -1 ){
+    num = 0;
+    _schedule_number = 1;
+  }
+  _schedule_eeprom_offset = (int)(_eeprom_start_addr + IRR_EEPROM_BYTES + (num * SCHEDULE_EEPROM_BYTES));
 }
 
 bool schedule_is_enabled(){
@@ -42,31 +48,46 @@ bool schedule_is_enabled(){
 }
 
 void set_schedule_is_enabled(bool val){
-  saveBit(_schedule_storebits, SCHEDULE_BIT_ENABLED, SCHEDULE_STORE_BITS + _schedule_eeprom_offset, val);
+  save16Bit(_schedule_storebits, SCHEDULE_BIT_ENABLED, SCHEDULE_STORE_BITS + _schedule_eeprom_offset, val);
 }
 
-
-bool schedule_water_any_day(){
-  return bitRead(_schedule_storebits,SCHEDULE_BIT_ANY_DAY);
+// read sun-sat,any,even,odd,nth (1-11)
+bool schedule_day_bit(uint16_t bit_location){
+  return bitRead(_schedule_storebits,bit_location);
 }
 
-void set_schedule_water_any_day(bool val){
-  saveBit(_schedule_storebits, SCHEDULE_BIT_ANY_DAY, SCHEDULE_STORE_BITS + _schedule_eeprom_offset, val);
-}
-
-bool schedule_water_day(){
-  return bitRead(_schedule_storebits,SCHEDULE_BIT_SUN);
-}
-
-uint16_t schedule_start_time1(){
-  return EEPROM.readInt(IRR_WIND_ID + _eeprom_start_addr);
+// save sun-sat,any,even,odd,nth (1-11)
+void set_schedule_day_bit(uint16_t bit_location, bool val){
+  save16Bit(_schedule_storebits, bit_location, SCHEDULE_STORE_BITS + _schedule_eeprom_offset, val);
 }
 
 void set_schedule_start_time1(uint16_t val){
+  _schedule_start_time_1 = val;
   EEPROM.writeInt(SCHEDULE_START_TIME_1 + _schedule_eeprom_offset, val);
 }
+
 void set_schedule_start_time2(uint16_t val){
+  _schedule_start_time_2 = val;
   EEPROM.writeInt(SCHEDULE_START_TIME_2 + _schedule_eeprom_offset, val);
+}
+
+void set_schedule_repeat_delay(uint16_t val){
+  _schedule_repeat_delay = val;
+  EEPROM.writeInt(SCHEDULE_REPEAT_DELAY + _schedule_eeprom_offset, val);
+}
+
+void set_schedule_every_nth_day(uint16_t val){
+  _schedule_every_nth_day = val;
+  EEPROM.writeInt(SCHEDULE_EVERY_NTH_DAY + _schedule_eeprom_offset, val);
+}
+
+// zones that this schedule will water (0-32)
+bool schedule_water_zone(uint16_t zone){
+  return bitRead(_schedule_zones,zone);
+}
+
+void set_schedule_water_zone(uint16_t zone, bool val){
+  save32Bit(_schedule_zones, zone, SCHEDULE_ZONES + _schedule_eeprom_offset, val);
 }
 
 bool is_water_day(){
@@ -108,7 +129,4 @@ int calculate_next_start(){
   } else {
     return 0;
   }
-}
-void set_schedule_water_sun(bool val){
-  saveBit(_schedule_storebits, SCHEDULE_BIT_SUN, SCHEDULE_STORE_BITS + _schedule_eeprom_offset, val);
 }

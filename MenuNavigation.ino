@@ -273,7 +273,7 @@ void navigateZoneSchedule(){
       menuLevelEnter(menuZone);
     }
     if (menuLevel == menuSchedules){
-      //loadScheduleConfig(menuNumVal);
+      loadScheduleConfig(menuNumVal);
       menuLevelEnter(menuSchedule);
     }
   }

@@ -16,6 +16,7 @@ void set_zone_eeprom_offset(){
   _zone_eeprom_offset = (int)(_eeprom_start_addr + (((int)_zone_number - 1) * ZONE_EEPROM_BYTES));
 }
 
+// Called from menu.
 void loadZoneConfig(uint8_t num){
   _zone_number = num;
   set_zone_eeprom_offset();
