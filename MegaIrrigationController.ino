@@ -269,7 +269,7 @@ unsigned long _lastTimeRequest=0;
 struct schTracker {
   bool is_running;
   unsigned long next_start;
-}
+};
 schTracker scheduleTracker[NUMBER_OF_SCHEDULES];
 
 

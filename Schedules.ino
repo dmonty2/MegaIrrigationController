@@ -12,6 +12,9 @@ void initScheduleConfig(){
     loadScheduleConfig(i);
     scheduleTracker[i].is_running = 0;
     scheduleTracker[i].next_start = calculate_next_start(); // 0 = disabled.
+    // TODO: next_start1 next_start2; reset each to 0 when run.
+    // this way overlapping times will run back to back. 
+    // next_start1 != 0 && current > next_start1; then water.
   }
 }
  
@@ -88,11 +91,20 @@ bool is_water_day(){
   }
   return false;
 }
-unsigned long calculate_next_start(){
-  if (schedule_is_enabled()){
-    // calculate hour/minutes into minutes since midnight
-    // if _schedule_start_time_1 > now and water today then water
-    // if _schedule_start_time_1 > bla bla TODO
+int calculate_next_start(){
+  if (schedule_is_enabled() && is_water_day()){
+    int next, current = 0;
+    current = hour() * 60 + minute();
+    if ( _schedule_start_time_2 > _schedule_start_time_1 && current < _schedule_start_time_1 ){
+      next = _schedule_start_time_1;
+    } else if ( _schedule_start_time_1 > _schedule_start_time_2 && current < _schedule_start_time_2){
+      next = _schedule_start_time_2;
+    } else if ( current > _schedule_start_time_1 && current < _schedule_start_time_2 ){
+      next = _schedule_start_time_2;
+    } else if ( current > _schedule_start_time_2 && current < _schedule_start_time_1){
+      next = _schedule_start_time_1;
+    }
+    return next;
   } else {
     return 0;
   }
