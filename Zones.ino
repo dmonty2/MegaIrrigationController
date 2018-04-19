@@ -30,9 +30,22 @@ void loadZoneConfig(uint8_t num){
   _zone_moisture_id = EEPROM.readInt(ZONE_MOISTURE_ID + _zone_eeprom_offset);
 }
 
+void resetZoneConfig(){
+  for ( i = 1; i <= _num_zones; i++){
+    loadZoneConfig(i);
+    _zone_storebits = 0;
+    set_zone_run_time(10);
+    set_zone_pin(0);
+    set_moisture_id(0);
+    //set_zone_name(Zone#); // TODO
+    set_dry_level(0);
+    set_blowout_time(40);
+    set_blowout_cycles(4);
+  }  
+}
+
 void updateZoneConfig(){
   set_zone_eeprom_offset();
-  EEPROM.updateByte(ZONE_NUM + _zone_eeprom_offset,(uint8_t)_zone_number);
   EEPROM.updateByte(ZONE_STORE_BITS + _zone_eeprom_offset,(uint8_t)_zone_storebits);
   EEPROM.updateByte(ZONE_PIN + _zone_eeprom_offset,(uint8_t)_zone_pin);
   EEPROM.updateBlock<char>(ZONE_NAME + _zone_eeprom_offset, _zone_name, sizeof(_zone_name));

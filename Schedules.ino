@@ -9,7 +9,7 @@
 
 // Initialize schedule timer.
 void initScheduleConfig(){
-  for (uint8_t i = 0; i < NUMBER_OF_SCHEDULES; i++ ){
+  for (int i = 1; i <= NUMBER_OF_SCHEDULES; i++ ){
     loadScheduleConfig(i);
     scheduleTracker[i].is_running = 0;
     scheduleTracker[i].next_start = calculate_next_start(); // 0 = disabled.
@@ -31,9 +31,23 @@ void loadScheduleConfig(uint8_t num){
   _schedule_zones = EEPROM.readLong(SCHEDULE_ZONES + _schedule_eeprom_offset);
 }
 
+void resetScheduleConfig(){
+  for ( int i = 1; i <= NUMBER_OF_SCHEDULES; i++ ){
+    _schedule_number = num;
+    set_schedule_eeprom_offset();
+    _schedule_storebits = 0;
+    EEPROM.updateInt(SCHEDULE_STORE_BITS + _schedule_eeprom_offset, _schedule_storebits);
+    set_schedule_start_time1(0);
+    set_schedule_start_time2(0);
+    set_schedule_repeat_delay(0);
+    set_schedule_every_nth_day(0);
+    EEPROM.updateLong(SCHEDULE_ZONES + _schedule_eeprom_offset, 0);
+  }  
+}
+
 // Caculate each zone's EEPROM area.
 void set_schedule_eeprom_offset(){
-  // set num to zero based with floor of 0;
+  // when addressing eeprom schedule num starts at zero;
   int num = _schedule_number;
   num -= 1;
   if ( num <= -1 ){

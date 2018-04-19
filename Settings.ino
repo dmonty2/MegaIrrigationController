@@ -7,8 +7,8 @@
  * version 2 as published by the Free Software Foundation.
  */
 
-// Called from menu.
-void loadSettingsConfig(){
+
+void initSettingsConfig(){
   //Serial.println("Loading settings");
   _eeprom_version = EEPROM.readByte(EEPROM_VERSION + _eeprom_start_addr);
   _storebits = EEPROM.readByte(IRR_STORE_BITS + _eeprom_start_addr);
@@ -28,6 +28,7 @@ void loadSettingsConfig(){
 // Reset all settings to some sane defaults for 1st run or for a reset.
 void defaultReset(){
   int i = 0;
+  // Settings
   _storebits = 0;
   set_eeprom_version(EEPROM_VERSION);
   set_is_enabled(1);
@@ -42,24 +43,11 @@ void defaultReset(){
   set_wind_id(0);
   //set_weather_id(0); //TODO
   set_blowout_wait(90); // 90 seconds to re-charge
-  /*
-  for ( i = 1; i <= _num_zones; i++){
-    loadZoneConfig(i);
-    _zone_storebits = 0;
-    set_zone_run_time(10);
-    set_zone_pin(0);
-    set_moisture_id(0);
-    //set_zone_name(Zone#); // TODO
-    set_dry_level(0);
-    set_blowout_time(40);
-    set_blowout_cycles(4);
-  }
-  for ( i = 1; i <= _num_schedules; i++ ){
-    loadScheduleConfig(i);
-    _schedule_storebits = 0;
-    //TODO...
-  }
-  */
+
+  // Schedule
+  resetScheduleConfig();
+  resetZoneConfig();
+
   // Indicate reset by going back to menuRoot.
   menuSelected = menuRoot;
   menuLevel = menuRoot;

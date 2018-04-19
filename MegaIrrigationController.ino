@@ -8,7 +8,6 @@
  * version 2 as published by the Free Software Foundation.
  */
 
-//#define NUM_ZONES 5
 
 #define IRRIGATION_VERSION 1
 // ======== EEPROM =========
@@ -17,12 +16,12 @@
 #define EEPROM_VERSION 2  // track major changes to eeprom
 // EEPROM defaults are usually 0 or 255, so we can detect new hardware.
 
-
 #define ZONE_NAME_SIZE 15 // Zone name size 14+NUL
 
 // Start of eeprom is stored in EEPROM_LOCAL_CONFIG_ADDRESS
 // "~/Arduino/libraries/MySensors/core/MyEepromAddresses.h"
 // eeprom arangement will be offset by EEPROM_LOCAL_CONFIG_ADDRESS.
+// Settings EEPROM Map
 #define IRR_EEPROM_VERSION 0                           // uint8_t    1
 #define IRR_STORE_BITS (EEPROM_VERSION + 1)            // uint8_t    2
 #define IRR_NUM_ZONES (IRR_STORE_BITS + 1)             // uint8_t    3
@@ -35,28 +34,27 @@
 // With spare (7 bytes).
 #define IRR_EEPROM_BYTES  20 // EEPROM Bytes needed for IRR_*
 
+// Schedule EEPROM Map
 // Fixed number of schedules so the rest of the eeprom can be used for zones.
 #define NUMBER_OF_SCHEDULES 4                                //  Changing this requires resetting eeprom as zones eprom saves follow after.
-#define SCHEDULE_NUM 0                                       //  1 uint8_t
-#define SCHEDULE_STORE_BITS ( SCHEDULE_NUM + 1 )             //  3 uint16_t
-#define SCHEDULE_START_TIME_1 ( SCHEDULE_STORE_BITS + 2 )    //  5 uint16_t start time e.g. 6AM (minutes since midnight)
-#define SCHEDULE_START_TIME_2 ( SCHEDULE_START_TIME_1 + 2 )  //  7 uint16_t start time 2 e.g. 6PM (minutes since midnight)
-#define SCHEDULE_REPEAT_DELAY ( SCHEDULE_START_TIME_2 + 2 )  //  9 uint16_t delay before repeating 0.
-#define SCHEDULE_EVERY_NTH_DAY ( SCHEDULE_REPEAT_DELAY + 2 ) //  10 unit8_t every nth day
-#define SCHEDULE_ZONES ( SCHEDULE_EVERY_NTH_DAY + 1 )        //  14 uint32_t 32 zones.
+#define SCHEDULE_STORE_BITS 0                                //  2 uint16_t
+#define SCHEDULE_START_TIME_1 ( SCHEDULE_STORE_BITS + 2 )    //  4 uint16_t start time e.g. 6AM (minutes since midnight)
+#define SCHEDULE_START_TIME_2 ( SCHEDULE_START_TIME_1 + 2 )  //  6 uint16_t start time 2 e.g. 6PM (minutes since midnight)
+#define SCHEDULE_REPEAT_DELAY ( SCHEDULE_START_TIME_2 + 2 )  //  8 uint16_t delay before repeating 0.
+#define SCHEDULE_EVERY_NTH_DAY ( SCHEDULE_REPEAT_DELAY + 2 ) //  9 unit8_t every nth day
+#define SCHEDULE_ZONES ( SCHEDULE_EVERY_NTH_DAY + 1 )        //  13 uint32_t 32 zones.
 #define SCHEDULE_EEPROM_BYTES 16 // EEPROM Bytes needed for each schedule with 2 spare bites for growth
 
-//
-#define ZONE_NUM 0                                  //  1 uint8_t
-#define ZONE_STORE_BITS (ZONE_NUM + 1)              //  2 uint8_t
-#define ZONE_PIN (ZONE_STORE_BITS + 1)              //  3 uint8_t
-#define ZONE_NAME (ZONE_PIN + 1)                    // 18 char[15] ZONE_NAME_SIZE
-#define ZONE_RUNTIME (ZONE_NAME + ZONE_NAME_SIZE)   // 19 uint8_t (store in mintues)
-#define ZONE_BLOWOUT_TIME (ZONE_RUNTIME + 2)        // 21 uint16_t (store in seconds)
-#define ZONE_BLOWOUT_CYCLES (ZONE_BLOWOUT_TIME + 2) // 22 uint8_t
-#define ZONE_IS_DRY_VALUE (ZONE_BLOWOUT_CYCLES + 1) // 24 uint16_t
-#define ZONE_MOISTURE_ID (ZONE_IS_DRY_VALUE + 2)    // 26 uint16_t
-// With spare (4 bytes)
+// Zone EEPROM Map
+#define ZONE_STORE_BITS 0                           //  1 uint8_t
+#define ZONE_PIN (ZONE_STORE_BITS + 1)              //  2 uint8_t
+#define ZONE_NAME (ZONE_PIN + 1)                    // 17 char[15] ZONE_NAME_SIZE
+#define ZONE_RUNTIME (ZONE_NAME + ZONE_NAME_SIZE)   // 18 uint8_t (store in mintues)
+#define ZONE_BLOWOUT_TIME (ZONE_RUNTIME + 2)        // 20 uint16_t (store in seconds)
+#define ZONE_BLOWOUT_CYCLES (ZONE_BLOWOUT_TIME + 2) // 21 uint8_t
+#define ZONE_IS_DRY_VALUE (ZONE_BLOWOUT_CYCLES + 1) // 23 uint16_t
+#define ZONE_MOISTURE_ID (ZONE_IS_DRY_VALUE + 2)    // 25 uint16_t
+// With spare (5 bytes)
 #define ZONE_EEPROM_BYTES 30 // EEPROM Bytes needed for each zone;
 
 
@@ -361,14 +359,16 @@ void blowout_zones(void){
 }
 
 void init_irrigation(){
-  int eeprom_start = EEPROM_LOCAL_CONFIG_ADDRESS + 255;
+  // Leave space for MySensors eeprom.
+  int eeprom_start = EEPROM_LOCAL_CONFIG_ADDRESS + 255;  
   _eeprom_start_addr = eeprom_start;
-  EEPROM.setMemPool(eeprom_start, EEPROMSizeMega);
+  EEPROM.setMemPool(eeprom_start, EEPROMSizeMega);  // TODO this line may not be needed.
   uint8_t stored_version = EEPROM.readByte(IRR_EEPROM_VERSION + _eeprom_start_addr);
   if (stored_version == 0 || stored_version == 255){
     defaultReset();
   }
-  loadSettingsConfig();
+  // Load initial settings from EEPROM into memory.
+  initSettingsConfig();
   initScheduleConfig();
   initZoneConfig();
 }
