@@ -11,12 +11,8 @@
 void initScheduleConfig(){
   for (int i = 1; i <= NUMBER_OF_SCHEDULES; i++ ){
     loadScheduleConfig(i);
-    scheduleTracker[i].is_running = 0;
-    scheduleTracker[i].next_start1 = calculate_next_start_today(_schedule_start_time_1); // 0 = disabled.
-    scheduleTracker[i].next_start2 = calculate_next_start_today(_schedule_start_time_2);  // 0 = disabled.
-    // TODO: next_start1 next_start2; reset each to 0 when run.
-    // this way overlapping times will run back to back. 
-    // next_start1 != 0 && current > next_start1; then water.
+    scheduleTracker[i].curent_running_zone = 0; // 0 = not running.  1+ means this schedule is running.
+    scheduleTracker[i].next_start = calculate_next_start_today(_schedule_start_time); // 0 = disabled.
   }
 }
 
@@ -25,8 +21,7 @@ void loadScheduleConfig(uint8_t num){
   _schedule_number = num;
   set_schedule_eeprom_offset();
   _schedule_storebits = EEPROM.readByte(SCHEDULE_STORE_BITS + _schedule_eeprom_offset);
-  _schedule_start_time_1 = EEPROM.readInt(SCHEDULE_START_TIME_1 + _schedule_eeprom_offset);
-  _schedule_start_time_2 = EEPROM.readInt(SCHEDULE_START_TIME_2 + _schedule_eeprom_offset);
+  _schedule_start_time = EEPROM.readInt(SCHEDULE_START_TIME + _schedule_eeprom_offset);
   _schedule_repeat_delay = EEPROM.readInt(SCHEDULE_REPEAT_DELAY + _schedule_eeprom_offset);
   _schedule_every_nth_day = EEPROM.readInt(SCHEDULE_EVERY_NTH_DAY + _schedule_eeprom_offset);
   _schedule_zones = EEPROM.readLong(SCHEDULE_ZONES + _schedule_eeprom_offset);
@@ -34,12 +29,11 @@ void loadScheduleConfig(uint8_t num){
 
 void resetScheduleConfig(){
   for ( int i = 1; i <= NUMBER_OF_SCHEDULES; i++ ){
-    _schedule_number = num;
+    _schedule_number = i;
     set_schedule_eeprom_offset();
     _schedule_storebits = 0;
     EEPROM.updateInt(SCHEDULE_STORE_BITS + _schedule_eeprom_offset, _schedule_storebits);
-    set_schedule_start_time1(0);
-    set_schedule_start_time2(0);
+    set_schedule_start_time(0);
     set_schedule_repeat_delay(0);
     set_schedule_every_nth_day(0);
     EEPROM.updateLong(SCHEDULE_ZONES + _schedule_eeprom_offset, 0);
@@ -49,8 +43,47 @@ void resetScheduleConfig(){
 // Check schedule for when to start zones.
 void checkSchedule(){
   // TODO at midnight set schedule for the day.
-  if (_is_running == 0){
+  if (_current_running_zone >= 1 && _current_running_scedule == 0 ){
+    // Loop through all schedules and check next run times.
+    int current = hour() * 60 + minute();
+    for (int i = 1; i <= NUMBER_OF_SCHEDULES; i++ ){
+      // Check all schedule start times - if a schedule is running then the others will delay.
+      if ( scheduleTracker[i].next_start != 0 && current > scheduleTracker[i].next_start ){
+        startSchedule(i);
+      }
+    }
+  }
+  if (_current_running_zone == 0 && _current_running_scedule >= 1 ){
+    // choose the next zone to run...
+    int zone = scheduleTracker[_current_running_scedule].curent_running_zone + 1;
+    bool found_zone = 0;
+    for ( zone; zone <= _num_zones; zone++ ){
+      if ( schedule_water_zone(zone) ){
+        scheduleTracker[_current_running_scedule].curent_running_zone = zone;
+        loadZoneConfig(zone);
+        water_on();
+        found_zone = 1;
+      }
+    }
+    if ( found_zone == 0 ){
+      // No more zones turn off.
+      scheduleTracker[_current_running_scedule].curent_running_zone = 0;
+      _current_running_scedule = 0;
+      all_zones_off();  // TODO safety.
+    }
+  }
+}
 
+// Run a schedule
+void startSchedule(int schedule_num){
+  _current_running_scedule = schedule_num;
+  loadScheduleConfig(schedule_num);
+  for ( int zone = 1; zone <= _num_zones; zone++){
+    if ( schedule_water_zone(zone) ){
+      scheduleTracker[schedule_num].curent_running_zone = zone;
+      loadZoneConfig(zone);
+      water_on();
+    }
   }
 }
 
@@ -84,14 +117,9 @@ void set_schedule_day_bit(uint16_t bit_location, bool val){
   save16Bit(_schedule_storebits, bit_location, SCHEDULE_STORE_BITS + _schedule_eeprom_offset, val);
 }
 
-void set_schedule_start_time1(uint16_t val){
-  _schedule_start_time_1 = val;
-  EEPROM.writeInt(SCHEDULE_START_TIME_1 + _schedule_eeprom_offset, val);
-}
-
-void set_schedule_start_time2(uint16_t val){
-  _schedule_start_time_2 = val;
-  EEPROM.writeInt(SCHEDULE_START_TIME_2 + _schedule_eeprom_offset, val);
+void set_schedule_start_time(uint16_t val){
+  _schedule_start_time = val;
+  EEPROM.writeInt(SCHEDULE_START_TIME + _schedule_eeprom_offset, val);
 }
 
 void set_schedule_repeat_delay(uint16_t val){
@@ -144,11 +172,28 @@ int calculate_next_start_today(uint16_t &sched_time){
     if ( current < sched_time ){
       next = sched_time;
     }
-    if ( current > sched_time &&  current <= (_schedule_repeat_delay + sched_time) ){
+    // TODO - handle repeat
+    /*
+    if ( current > sched_time &&  _schedule_repeat_delay > 0 ) ){
+      int total_runtime = sum_zone_runtime();
+      
       next = sched_time + _schedule_repeat_delay;
     }
+    */
     return next;
   } else {
     return 0;
   }
 }
+
+// For repeat we need to find the sum of all zone runtimes 
+int sum_zone_time(){
+  int total_time = 0;
+  for ( int i = 1; i <= _num_zones; i++){
+    if ( schedule_water_zone(i)){
+      total_time += get_zone_runtime(i);
+    }
+  }
+  return total_time;
+}
+

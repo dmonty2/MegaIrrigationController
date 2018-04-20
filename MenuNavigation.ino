@@ -99,8 +99,7 @@ void initializeMenu(){
   bitSet(menuBits[menuZoneName], menuBitInputText);
 
   // Time item
-  bitSet(menuBits[menuScheduleStartTime1], menuBitInputTime);
-  bitSet(menuBits[menuScheduleStartTime2], menuBitInputTime);
+  bitSet(menuBits[menuScheduleStartTime], menuBitInputTime);
 }
 
 // Track traversing into sub-menus & load settings from memory
@@ -595,17 +594,11 @@ void getMenuText(char *dest, menuItems mId){
     case menuScheduleZones:
       strcpy(dest, txtZones);
       break;
-    case menuScheduleStartTime1:
+    case menuScheduleStartTime:
       strcpy(dest, txtStart);
       strcat(dest, " ");
       strcat(dest, txtTime);
       strcat(dest, "1");
-      break;
-    case menuScheduleStartTime2:
-      strcpy(dest, txtStart);
-      strcat(dest, " ");
-      strcat(dest, txtTime);
-      strcat(dest, "2");
       break;
     case menuScheduleRepeatDelay:
       strcpy(dest, txtRepeat);

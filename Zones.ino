@@ -11,6 +11,8 @@ void initZoneConfig(){
   
 }
 
+
+
 // Caculate each zone's EEPROM area.
 void set_zone_eeprom_offset(){
   _zone_eeprom_offset = (int)(_eeprom_start_addr + (((int)_zone_number - 1) * ZONE_EEPROM_BYTES));
@@ -31,7 +33,7 @@ void loadZoneConfig(uint8_t num){
 }
 
 void resetZoneConfig(){
-  for ( i = 1; i <= _num_zones; i++){
+  for ( int i = 1; i <= _num_zones; i++){
     loadZoneConfig(i);
     _zone_storebits = 0;
     set_zone_run_time(10);
@@ -57,7 +59,9 @@ void updateZoneConfig(){
 }
 
 void water_on(){
-  _is_running = 1;
+  _current_running_zone = _zone_number;
+  _zone_timer_start = _currentMillis;
+  _zone_timer_end = _zone_run_time * 60 * 1000; // TODO - this may need to change for manual run.
   if(_zone_pin >= 1){
     if (zone_normally_open()){
       digitalWrite(_zone_pin, HIGH);
@@ -68,13 +72,26 @@ void water_on(){
 }
 
 void water_off(){
-  _is_running = 0;
+  _current_running_zone = 0;
   if(_zone_pin >= 1){
     if (zone_normally_open()){
       digitalWrite(_zone_pin, LOW);
     } else {
       digitalWrite(_zone_pin, HIGH);
     }
+  }
+}
+
+// Safety - call this function to ensure zones are off.
+void all_zones_off(){
+  if ( _current_running_zone == 0 ){
+    // TODO - loop through all zone pins and turn them off.
+  }
+}
+
+void checkZoneTimer(){
+  if ( _current_running_zone >= 1 && (_currentMillis - _zone_timer_start) >= _zone_timer_end){
+    water_off();
   }
 }
 
@@ -152,4 +169,10 @@ void set_blowout_cycles(uint16_t val){
   }
   _zone_blow_cycles = val;
   EEPROM.writeByte(ZONE_BLOWOUT_CYCLES + _zone_eeprom_offset, val);
+}
+
+// Called by schedule to calculate total runtime for repeat schedules
+int get_zone_runtime(int zone_num){
+  int offset = (int)(_eeprom_start_addr + (zone_num - 1) * ZONE_EEPROM_BYTES);
+  return EEPROM.readByte(ZONE_RUNTIME + offset);
 }

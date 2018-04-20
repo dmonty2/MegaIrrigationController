@@ -38,12 +38,11 @@
 // Fixed number of schedules so the rest of the eeprom can be used for zones.
 #define NUMBER_OF_SCHEDULES 4                                //  Changing this requires resetting eeprom as zones eprom saves follow after.
 #define SCHEDULE_STORE_BITS 0                                //  2 uint16_t
-#define SCHEDULE_START_TIME_1 ( SCHEDULE_STORE_BITS + 2 )    //  4 uint16_t start time e.g. 6AM (minutes since midnight)
-#define SCHEDULE_START_TIME_2 ( SCHEDULE_START_TIME_1 + 2 )  //  6 uint16_t start time 2 e.g. 6PM (minutes since midnight)
-#define SCHEDULE_REPEAT_DELAY ( SCHEDULE_START_TIME_2 + 2 )  //  8 uint16_t delay before repeating 0.
+#define SCHEDULE_START_TIME ( SCHEDULE_STORE_BITS + 2 )      //  4 uint16_t start time e.g. 6AM (minutes since midnight)
+#define SCHEDULE_REPEAT_DELAY ( SCHEDULE_START_TIME + 2 )    //  8 uint16_t delay before repeating 0.
 #define SCHEDULE_EVERY_NTH_DAY ( SCHEDULE_REPEAT_DELAY + 2 ) //  9 unit8_t every nth day
 #define SCHEDULE_ZONES ( SCHEDULE_EVERY_NTH_DAY + 1 )        //  13 uint32_t 32 zones.
-#define SCHEDULE_EEPROM_BYTES 16 // EEPROM Bytes needed for each schedule with 2 spare bites for growth
+#define SCHEDULE_EEPROM_BYTES 16 // EEPROM Bytes needed for each schedule with 4 spare bites for growth
 
 // Zone EEPROM Map
 #define ZONE_STORE_BITS 0                           //  1 uint8_t
@@ -148,8 +147,7 @@ enum menuItems {
       menuScheduleEnable,   //Schedule details...
       menuScheduleDay,
       menuScheduleZones,
-      menuScheduleStartTime1,
-      menuScheduleStartTime2,
+      menuScheduleStartTime,
       menuScheduleRepeatDelay,
       menuLast
 };
@@ -229,7 +227,8 @@ uint16_t _blowout_recharge_wait = 0; // Compressor recharge/rest wait time.
 
 // Settings in RAM
 uint8_t  _is_enabled = 0;        // Master ON OFF/rain
-uint8_t  _is_running = 0;        // System is running.
+uint8_t  _current_running_zone = 0;  // Water zone is running.
+uint8_t  _current_running_scedule = 0;  // Schedule is running zones.
 //uint8_t  _is_enabled = 0;        // Master ON OFF/rain
 int      _eeprom_start_addr = 0; // EEPROM start address.
 
@@ -246,16 +245,17 @@ uint16_t _zone_is_dry_value = 0; //  2 Value at which the zone is considered dry
 uint16_t _zone_moisture_id = 0;  //  2 MySensors ID for moisture sensor.
 
 // Zone in RAM
-uint8_t  _zone_is_on = 0;              // Zone is running
+//uint8_t  _zone_is_on = 0;              // Zone is running
+unsigned long _zone_timer_start = 0;     // Timer for zone.
+unsigned long _zone_timer_end = 0;     // Timer for zone.
 uint16_t _zone_previous_moisture = 0;  // Previous 
 uint16_t _zone_current_moisture = 0;   // Current Mosture sensor value
 int      _zone_eeprom_offset = 0;      // EEPROM address offset for this zone.
 
 // Schedule saved in EEPROM
-uint8_t _schedule_number = 0;    // 1 Schedule Number
-uint16_t _schedule_storebits = 0; // 1 used to store on/off bits
-uint16_t _schedule_start_time_1 = 0; // 1st start time
-uint16_t _schedule_start_time_2 = 0; // 2nd start time
+uint8_t _schedule_number = 0;        // 1 Schedule Number
+uint16_t _schedule_storebits = 0;    // 1 used to store on/off bits
+uint16_t _schedule_start_time = 0;   // start time
 uint16_t _schedule_repeat_delay = 0; // repeat delay 0 = is no repeats.
 uint8_t _schedule_every_nth_day = 0; // every nth day starting on 1st of month
 uint32_t _schedule_zones = 0;        // bit toggle which zones to water on this schedule
@@ -266,7 +266,7 @@ bool _timeReceived = false; // Tracking Time
 unsigned long _lastTimeRequest=0;
 // Schedule timers
 struct schTracker {
-  bool is_running;
+  int curent_running_zone;
   unsigned long next_start;
 };
 schTracker scheduleTracker[NUMBER_OF_SCHEDULES];
@@ -316,14 +316,6 @@ void loop(){
 void receiveTime(unsigned long time) {
   setTime(time);
   _timeReceived = true;
-}
-
-void checkZoneTimer(){
-  if (_is_running == 1){
-    // put single, multiple, or all zones in an array and cycle through each
-    // for (uint8_t i = 0; i <= num_zones; i++ ){
-    //}
-  }
 }
 
 // Check sensors every hour.
