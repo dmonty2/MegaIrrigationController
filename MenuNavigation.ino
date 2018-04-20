@@ -234,7 +234,8 @@ void naviagteYesNo(){
   }
 }
 
-// Navigating a Number chooser e.g. ID, PIN, etc. 
+// Navigating a Number chooser e.g. ID, PIN, etc.
+// TODO if we are navigating menuScheduleRepeatDelay skip from 0 to sum of all zone times.
 void navigateNumberChooser(){
   if (btnCurrent == btnDown && menuNumVal > 0){
       menuNumVal -= 1;

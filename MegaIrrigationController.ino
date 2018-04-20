@@ -217,6 +217,7 @@ unsigned long _previousOffMillis = 0; // countdown power off timer
 uint8_t  _version = IRRIGATION_VERSION;
 // Settings saved in EEPROM
 uint8_t  _eeprom_version = EEPROM_VERSION;
+bool     _is_bootup = 1;         // detect bootup.
 uint8_t  _storebits = 0;         // store bits
 uint8_t  _num_zones = 0;         // Number of zones.
 uint8_t  _master_valve_pin = 0;  // Pin for master valve
@@ -283,6 +284,7 @@ void presentation()
 }
 
 void setup(){
+  _is_bootup = 1;
   init_irrigation();
   lcd.begin(LCD_COLS, LCD_ROWS);
   lcd.clear();
@@ -291,6 +293,7 @@ void setup(){
   lcd.print("Controller");
   initializeMenu();
   requestTime();
+  _is_bootup = 0;
 }
 
 void loop(){
@@ -328,12 +331,7 @@ void checkSensors(){
   
 }
 
-// Check schedule for when to start zones.
-void checkSchedule(){
-  if (_is_running == 0){
 
-  }
-}
 
 void run_all_zones(void){
   for (uint8_t zone_num = 0; zone_num <= _num_zones; zone_num++ ){

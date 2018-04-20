@@ -120,6 +120,7 @@ bool zone_use_mini_cycle(){
 }
 
 void set_zone_run_time(uint16_t val){
+  // TODO if menuScheduleRepeatDelay > 0 && sum of zones > menuScheduleRepeatDelay then update menuScheduleRepeatDelay to menuScheduleRepeatDelay + 1;
   if (val >= 255){
     val = 255;
   }

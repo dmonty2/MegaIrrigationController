@@ -12,7 +12,8 @@ void initScheduleConfig(){
   for (int i = 1; i <= NUMBER_OF_SCHEDULES; i++ ){
     loadScheduleConfig(i);
     scheduleTracker[i].is_running = 0;
-    scheduleTracker[i].next_start = calculate_next_start(); // 0 = disabled.
+    scheduleTracker[i].next_start1 = calculate_next_start_today(_schedule_start_time_1); // 0 = disabled.
+    scheduleTracker[i].next_start2 = calculate_next_start_today(_schedule_start_time_2);  // 0 = disabled.
     // TODO: next_start1 next_start2; reset each to 0 when run.
     // this way overlapping times will run back to back. 
     // next_start1 != 0 && current > next_start1; then water.
@@ -43,6 +44,14 @@ void resetScheduleConfig(){
     set_schedule_every_nth_day(0);
     EEPROM.updateLong(SCHEDULE_ZONES + _schedule_eeprom_offset, 0);
   }  
+}
+
+// Check schedule for when to start zones.
+void checkSchedule(){
+  // TODO at midnight set schedule for the day.
+  if (_is_running == 0){
+
+  }
 }
 
 // Caculate each zone's EEPROM area.
@@ -126,18 +135,17 @@ bool is_water_day(){
   }
   return false;
 }
-int calculate_next_start(){
+
+// Call at midnight and after a water cycle 
+int calculate_next_start_today(uint16_t &sched_time){
   if (schedule_is_enabled() && is_water_day()){
     int next, current = 0;
     current = hour() * 60 + minute();
-    if ( _schedule_start_time_2 > _schedule_start_time_1 && current < _schedule_start_time_1 ){
-      next = _schedule_start_time_1;
-    } else if ( _schedule_start_time_1 > _schedule_start_time_2 && current < _schedule_start_time_2){
-      next = _schedule_start_time_2;
-    } else if ( current > _schedule_start_time_1 && current < _schedule_start_time_2 ){
-      next = _schedule_start_time_2;
-    } else if ( current > _schedule_start_time_2 && current < _schedule_start_time_1){
-      next = _schedule_start_time_1;
+    if ( current < sched_time ){
+      next = sched_time;
+    }
+    if ( current > sched_time &&  current <= (_schedule_repeat_delay + sched_time) ){
+      next = sched_time + _schedule_repeat_delay;
     }
     return next;
   } else {
