@@ -7,7 +7,7 @@
  * version 2 as published by the Free Software Foundation.
  */
 
-// Initialize schedule timer.
+// Initialize schedule timer at bootup and at midnight.
 void initScheduleConfig(){
   for (int i = 1; i <= NUMBER_OF_SCHEDULES; i++ ){
     loadScheduleConfig(i);
@@ -42,50 +42,52 @@ void resetScheduleConfig(){
 
 // Check schedule for when to start zones.
 void checkSchedule(){
-  // TODO at midnight set schedule for the day.
-  if (_current_running_zone >= 1 && _current_running_scedule == 0 ){
+  // At midnight set schedule run times for the day.
+  if ( second() == 0 && minute() == 0 && hour() == 0 ){
+    initScheduleConfig();
+  }
+  //
+  if (_current_running_zone == 0 && _current_running_scedule == 0 ){
     // Loop through all schedules and check next run times.
     int current = hour() * 60 + minute();
-    for (int i = 1; i <= NUMBER_OF_SCHEDULES; i++ ){
+    for (int sched_num = 1; sched_num <= NUMBER_OF_SCHEDULES; sched_num++ ){
       // Check all schedule start times - if a schedule is running then the others will delay.
-      if ( scheduleTracker[i].next_start != 0 && current > scheduleTracker[i].next_start ){
-        startSchedule(i);
+      if ( scheduleTracker[sched_num].next_start != 0 && current >= scheduleTracker[sched_num].next_start ){
+        scheduleTracker[sched_num].next_start = 0;  // This schedule has run for today.
+        runSchedule(sched_num);
       }
     }
   }
   if (_current_running_zone == 0 && _current_running_scedule >= 1 ){
     // choose the next zone to run...
-    int zone = scheduleTracker[_current_running_scedule].curent_running_zone + 1;
-    bool found_zone = 0;
-    for ( zone; zone <= _num_zones; zone++ ){
-      if ( schedule_water_zone(zone) ){
-        scheduleTracker[_current_running_scedule].curent_running_zone = zone;
-        loadZoneConfig(zone);
-        water_on();
-        found_zone = 1;
-      }
-    }
-    if ( found_zone == 0 ){
-      // No more zones turn off.
-      scheduleTracker[_current_running_scedule].curent_running_zone = 0;
-      _current_running_scedule = 0;
-      all_zones_off();  // TODO safety.
-    }
+    runSchedule(_current_running_scedule);
   }
 }
 
-// Run a schedule
-void startSchedule(int schedule_num){
+// Start Running a schedule
+void runSchedule(int schedule_num){
+   scheduleTracker[_current_running_scedule].curent_running_zone += 1;
+   int zone = scheduleTracker[_current_running_scedule].curent_running_zone;
   _current_running_scedule = schedule_num;
   loadScheduleConfig(schedule_num);
-  for ( int zone = 1; zone <= _num_zones; zone++){
+  bool found_zone = 0;
+  for ( zone; zone <= _num_zones; zone++){
     if ( schedule_water_zone(zone) ){
       scheduleTracker[schedule_num].curent_running_zone = zone;
       loadZoneConfig(zone);
       water_on();
+      found_zone = 1;
+      break;
     }
   }
+  if ( found_zone == 0 ){
+    // No more zones turn off.
+    scheduleTracker[_current_running_scedule].curent_running_zone = 0;
+    _current_running_scedule = 0;
+    all_zones_off();  // TODO safety.
+  }
 }
+
 
 // Caculate each zone's EEPROM area.
 void set_schedule_eeprom_offset(){
