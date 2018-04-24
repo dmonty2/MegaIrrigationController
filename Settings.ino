@@ -49,6 +49,10 @@ void defaultReset(){
   resetZoneConfig();
 
   // Indicate reset by going back to menuRoot.
+  menuGoToRoot();
+}
+
+void menuGoToRoot(){
   menuSelected = menuRoot;
   menuLevel = menuRoot;
   for ( i = 0; i < 4; i++ ){

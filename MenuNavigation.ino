@@ -100,10 +100,18 @@ void initializeMenu(){
 
   // Time item
   bitSet(menuBits[menuScheduleStartTime], menuBitInputTime);
+
+  // Action items
+  bitSet(menuBits[menuRunAllZones], menuBitAction);
+  bitSet(menuBits[menuBlowOutZones], menuBitAction);
 }
 
 // Track traversing into sub-menus & load settings from memory
 void menuLevelEnter (uint8_t val){
+  if ( val == menuRunAllZones || val == menuBlowOutZones ){
+    doAction(val);
+    return;
+  }
   for (uint8_t i = 0; i <= 3; i++){
     if (menuParentTree[i] == 0){
       menuParentTree[i] = val;
@@ -190,6 +198,10 @@ void checkButtonPress(){
       naviagteYesNo();
     } else if (bitRead(menuBits[menuLevel], menuBitInputNumber)){
       navigateNumberChooser();
+    } else if (bitRead(menuBits[menuLevel], menuBitInputText)){
+      navigateText();
+    } else if (bitRead(menuBits[menuLevel], menuBitInputTime)){
+      navigateTime();
     } else if (bitRead(menuBits[menuLevel], menuBitIsNumList)){
       navigateZoneSchedule();
     }
@@ -276,6 +288,23 @@ void navigateZoneSchedule(){
       loadScheduleConfig(menuNumVal);
       menuLevelEnter(menuSchedule);
     }
+  }
+}
+
+void navigateText(){
+  
+}
+
+void navigateTime(){
+  
+}
+
+void doAction(uint8_t menu_val){
+  if ( menu_val == menuRunAllZones ){
+    runSchedule(1); // TODO schedule 1 may not have all zones - maybe rename Run Schedule 1.
+  }
+  if ( menu_val == menuBlowOutZones ){
+    
   }
 }
 /*

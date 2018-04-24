@@ -159,7 +159,8 @@ enum menuItemBits {
   menuBitInputNumber, // Leaf Number
   menuBitInputText,   // Leaf Text
   menuBitInputTime,   // Leaf Time
-  menuBitIsNumList    // Branch List of Zones or Schedules 1,2,3,4...n
+  menuBitIsNumList,   // Branch List of Zones or Schedules 1,2,3,4...n
+  menuBitIsAction     // Immediate action - stop, run all, blow out all
 };
 
 uint8_t  menuBoolVal = 0;
@@ -326,6 +327,7 @@ void checkSensors(){
 
 
 void run_all_zones(void){
+  // TODO
   for (uint8_t zone_num = 0; zone_num <= _num_zones; zone_num++ ){
     loadZoneConfig(zone_num);
   }
