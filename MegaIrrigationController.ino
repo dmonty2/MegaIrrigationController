@@ -171,7 +171,7 @@ menuItems menuLevel = menuRoot;
 menuItems menuSelected = menuActions;
 menuItems menuStart = menuEnable;
 menuItems menuEnd   = menuEnd;
-uint8_t menuParentTree[4] = { 0, 0, 0, 0 };
+uint8_t menuParentTree[4] = { 0, 0, 0, 0 };  // Used to track menu sub-levels
 
 
 
@@ -233,6 +233,16 @@ uint8_t  _current_running_scedule = 0;  // Schedule is running zones.
 //uint8_t  _is_enabled = 0;        // Master ON OFF/rain
 int      _eeprom_start_addr = 0; // EEPROM start address.
 
+enum systemStates {
+  stateOff,
+  stateRunningSchedule,
+  stateRunningAllZones,
+  stateRunningSomeZones
+}
+systemStates _systemState = stateOff;  // Track system state.
+
+
+
 
 // Zone saved in EEPROM
 uint8_t  _zone_number = 0;       //  1 Zone Number
@@ -246,21 +256,21 @@ uint16_t _zone_is_dry_value = 0; //  2 Value at which the zone is considered dry
 uint16_t _zone_moisture_id = 0;  //  2 MySensors ID for moisture sensor.
 
 // Zone in RAM
-//uint8_t  _zone_is_on = 0;              // Zone is running
-unsigned long _zone_timer_start = 0;     // Timer for zone.
+//uint8_t  _zone_is_on = 0;            // Zone is running
+unsigned long _zone_timer_start = 0;   // Timer for zone.
 unsigned long _zone_timer_end = 0;     // Timer for zone.
 uint16_t _zone_previous_moisture = 0;  // Previous 
 uint16_t _zone_current_moisture = 0;   // Current Mosture sensor value
 int      _zone_eeprom_offset = 0;      // EEPROM address offset for this zone.
 
 // Schedule saved in EEPROM
-uint8_t _schedule_number = 0;        // 1 Schedule Number
-uint16_t _schedule_storebits = 0;    // 1 used to store on/off bits
-uint16_t _schedule_start_time = 0;   // start time
-uint16_t _schedule_repeat_delay = 0; // repeat delay 0 = is no repeats.
-uint8_t _schedule_every_nth_day = 0; // every nth day starting on 1st of month
-uint32_t _schedule_zones = 0;        // bit toggle which zones to water on this schedule
-int _schedule_eeprom_offset = 0; // EEPROM address offset for this schedule
+uint8_t  _schedule_number = 0;        // 1 Schedule Number
+uint16_t _schedule_storebits = 0;     // 1 used to store on/off bits
+uint16_t _schedule_start_time = 0;    // start time
+uint16_t _schedule_repeat_delay = 0;  // repeat delay 0 = is no repeats.
+uint8_t  _schedule_every_nth_day = 0; // every nth day starting on 1st of month
+uint32_t _schedule_zones = 0;         // bit toggle which zones to water on this schedule
+int      _schedule_eeprom_offset = 0; // EEPROM address offset for this schedule
 
 // Schedule in RAM
 bool _timeReceived = false; // Tracking Time
@@ -270,7 +280,7 @@ struct schTracker {
   int curent_running_zone;
   unsigned long next_start;
 };
-schTracker scheduleTracker[NUMBER_OF_SCHEDULES];
+schTracker scheduleTracker[NUMBER_OF_SCHEDULES + 1]; // extra schedule is for run_all_zones and run_some_zones
 
 
 void presentation()
@@ -324,31 +334,6 @@ void checkSensors(){
   
 }
 
-
-
-void run_all_zones(void){
-  // TODO
-  for (uint8_t zone_num = 0; zone_num <= _num_zones; zone_num++ ){
-    loadZoneConfig(zone_num);
-  }
-
-}
-
-void run_some_zones(void){
-
-}
-
-void run_one_zone(uint8_t zone){
-
-}
-
-void stop_all(void){
-
-}
-
-void blowout_zones(void){
-
-}
 
 void init_irrigation(){
   // Leave space for MySensors eeprom.

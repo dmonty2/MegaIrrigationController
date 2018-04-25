@@ -16,7 +16,7 @@ void initScheduleConfig(){
   }
 }
 
-// Called from menu to populate the menu values
+// Called from menu to populate the menu values or for running a schedule.
 void loadScheduleConfig(uint8_t num){
   _schedule_number = num;
   set_schedule_eeprom_offset();
@@ -46,20 +46,21 @@ void checkSchedule(){
   if ( second() == 0 && minute() == 0 && hour() == 0 ){
     initScheduleConfig();
   }
-  //
+  // Nothing is running check start times.
   if (_current_running_zone == 0 && _current_running_scedule == 0 ){
-    // Loop through all schedules and check next run times.
+    // Loop through all schedules to check next run times.
     int current = hour() * 60 + minute();
     for (int sched_num = 1; sched_num <= NUMBER_OF_SCHEDULES; sched_num++ ){
       // Check all schedule start times - if a schedule is running then the others will delay.
       if ( scheduleTracker[sched_num].next_start != 0 && current >= scheduleTracker[sched_num].next_start ){
         scheduleTracker[sched_num].next_start = 0;  // This schedule has run for today.
+        _systemState = stateRunningSchedule;
         runSchedule(sched_num);
       }
     }
   }
+  // Zone is done schedule is running so find next zone to run
   if (_current_running_zone == 0 && _current_running_scedule >= 1 ){
-    // choose the next zone to run...
     runSchedule(_current_running_scedule);
   }
 }
@@ -84,6 +85,7 @@ void runSchedule(int schedule_num){
     // No more zones turn off.
     scheduleTracker[_current_running_scedule].curent_running_zone = 0;
     _current_running_scedule = 0;
+    _systemState = stateOff;
     all_zones_off();  // TODO safety.
   }
 }

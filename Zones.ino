@@ -82,6 +82,27 @@ void water_off(){
   }
 }
 
+void run_all_zones(void){
+  // TODO
+  _systemState = stateRunningAllZones;
+  for (uint8_t zone_num = 0; zone_num <= _num_zones; zone_num++ ){
+    loadZoneConfig(zone_num);
+  }
+
+}
+
+void run_some_zones(void){
+  _systemState = stateRunningSomeZones;
+
+}
+
+void run_one_zone(uint8_t zone){
+
+}
+
+void blowout_zones(void){
+
+}
 // Safety - call this function to ensure zones are off.
 void all_zones_off(){
   if ( _current_running_zone == 0 ){
