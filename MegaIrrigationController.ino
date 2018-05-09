@@ -8,6 +8,10 @@
  * version 2 as published by the Free Software Foundation.
  */
 
+/*
+ * TODO:
+ * 
+ */
 
 #define IRRIGATION_VERSION 1
 // ======== EEPROM =========
@@ -114,9 +118,9 @@ enum menuItems {
     menuZones,
     menuSchedules,
       menuEnable,            //Actions
-      menuRunAllZones,
+      menuRunSchedule,
       menuRunSomeZones,
-      menuBlowOutZones,
+      menuBlowoutZones,
       menuNumberOfZones,     //Settings
       menuMasterPin,
       menuMasterNormallyOpen,
@@ -127,7 +131,7 @@ enum menuItems {
       menuTempID,
       menuWindID,
       menuWeatherID,
-      menuBlowOutWait,
+      menuBlowoutWait,
       menuSetTime,
       menuDefaultReset,
       menuZone,             // Zone number chooser
@@ -140,8 +144,8 @@ enum menuItems {
       menuUseForecast,
       menuAvoidWind,
       menuAvoidFreeze,
-      menuBlowOutTime,
-      menuBlowOutCycles,
+      menuBlowoutTime,
+      menuBlowoutCycles,
       menuMiniCycles,
       menuSchedule,         // Schedule number chooser
       menuScheduleEnable,   //Schedule details...

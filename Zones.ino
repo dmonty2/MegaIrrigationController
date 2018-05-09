@@ -96,13 +96,16 @@ void run_some_zones(void){
 
 }
 
+// TODO
 void run_one_zone(uint8_t zone){
 
 }
 
+// TODO
 void blowout_zones(void){
 
 }
+
 // Safety - call this function to ensure zones are off.
 void all_zones_off(){
   if ( _current_running_zone == 0 ){

@@ -83,10 +83,10 @@ void initializeMenu(){
     bitSet(menuBits[itemsYN[idx]],menuBitInputYesNo);
   }
   // Number Menu Items
-  num_items = 14;
+  num_items = 15;
   int itemsNum[num_items] = { menuNumberOfZones, menuMasterPin, menuRainPin, menuRainID, menuTempID, menuWindID,
-                       menuWeatherID, menuBlowOutWait, menuZoneRunTime, menuZonePin, menuMoistureID,
-                       menuDryLevel, menuBlowOutTime, menuBlowOutCycles };
+                       menuWeatherID, menuBlowoutWait, menuZoneRunTime, menuZonePin, menuMoistureID,
+                       menuDryLevel, menuBlowoutTime, menuBlowoutCycles, menuRunSchedule };
   for (idx=0; idx < num_items; idx++){
     bitSet(menuBits[itemsNum[idx]],menuBitInputNumber);
   }
@@ -101,15 +101,14 @@ void initializeMenu(){
   // Time item
   bitSet(menuBits[menuScheduleStartTime], menuBitInputTime);
 
-  // Action items
-  bitSet(menuBits[menuRunAllZones], menuBitAction);
-  bitSet(menuBits[menuBlowOutZones], menuBitAction);
+  // Action item
+  bitSet(menuBits[menuBlowoutZones], menuBitAction);
 }
 
 // Track traversing into sub-menus & load settings from memory
 void menuLevelEnter (uint8_t val){
-  if ( val == menuRunAllZones || val == menuBlowOutZones ){
-    doAction(val);
+  if ( val == menuBlowoutZones ){
+    blowout_zones();
     return;
   }
   for (uint8_t i = 0; i <= 3; i++){
@@ -300,14 +299,6 @@ void navigateTime(){
   
 }
 
-void doAction(uint8_t menu_val){
-  if ( menu_val == menuRunAllZones ){
-    runSchedule(1); // TODO schedule 1 may not have all zones - maybe rename Run Schedule 1.
-  }
-  if ( menu_val == menuBlowOutZones ){
-    
-  }
-}
 /*
 void menuBitRead(menuItems menuIdx, menuItemBits menuBitPos){
   bitRead(menuBitProperties[menuIdx], menuBitPos);
@@ -325,7 +316,7 @@ void updateDisplay(){
         break;
       case menuActions:
         menuStart = menuEnable;
-        menuEnd = menuBlowOutZones;
+        menuEnd = menuBlowoutZones;
         break;
       case menuSettings:
         menuStart = menuNumberOfZones;
@@ -471,12 +462,10 @@ void getMenuText(char *dest, menuItems mId){
       strcat(dest, " ");
       strcat(dest, txtAll);
       break;
-    case menuRunAllZones:
+    case menuRunSchedule:
       strcpy(dest, txtRun);
       strcat(dest, " ");
-      strcat(dest, txtAll);
-      strcat(dest, " ");
-      strcat(dest, txtZones);
+      strcat(dest, txtSchedule);
       break;
     case menuRunSomeZones:
       strcpy(dest, txtRun);
@@ -485,7 +474,7 @@ void getMenuText(char *dest, menuItems mId){
       strcat(dest, " ");
       strcat(dest, txtZones);
       break;
-    case menuBlowOutZones:
+    case menuBlowoutZones:
       strcpy(dest, txtBlowout);
       strcat(dest, " ");
       strcat(dest, txtZones);
@@ -540,7 +529,7 @@ void getMenuText(char *dest, menuItems mId){
       strcat(dest, " ");
       strcat(dest, txtID);
       break;
-    case menuBlowOutWait:
+    case menuBlowoutWait:
       strcpy(dest, txtBlowout);
       strcat(dest, " ");
       strcat(dest, txtWait);
@@ -598,12 +587,12 @@ void getMenuText(char *dest, menuItems mId){
       strcat(dest, " ");
       strcat(dest, txtFreeze);
       break;
-    case menuBlowOutTime:
+    case menuBlowoutTime:
       strcpy(dest, txtBlowout);
       strcat(dest, " ");
       strcat(dest, txtTime);
       break;
-    case menuBlowOutCycles:
+    case menuBlowoutCycles:
       strcpy(dest, txtBlowout);
       strcat(dest, " ");
       strcat(dest, txtCycles);
@@ -748,7 +737,7 @@ uint16_t getNumVal(menuItems mId){
     case menuWeatherID:
       return 0;  //TODO work out weather forcast interface
       break;
-    case menuBlowOutWait:
+    case menuBlowoutWait:
       return _blowout_recharge_wait;
       break;
     case menuZoneRunTime:
@@ -763,10 +752,10 @@ uint16_t getNumVal(menuItems mId){
     case menuDryLevel:
       return _zone_is_dry_value;
       break;
-    case menuBlowOutTime:
+    case menuBlowoutTime:
       return _zone_blowout_time;
       break;
-    case menuBlowOutCycles:
+    case menuBlowoutCycles:
       return _zone_blow_cycles;
       break;
   }
@@ -796,7 +785,7 @@ void setNumVal(menuItems mId){
     case menuWeatherID:
       return set_weather_id(menuNumVal);
       break;
-    case menuBlowOutWait:
+    case menuBlowoutWait:
       return set_blowout_wait(menuNumVal);
       break;
     case menuZoneRunTime:
@@ -811,11 +800,14 @@ void setNumVal(menuItems mId){
     case menuDryLevel:
       return set_dry_level(menuNumVal);
       break;
-    case menuBlowOutTime:
+    case menuBlowoutTime:
       return set_blowout_time(menuNumVal);
       break;
-    case menuBlowOutCycles:
+    case menuBlowoutCycles:
       return set_blowout_cycles(menuNumVal);
+      break;
+    case menuRunSchedule:
+      runSchedule(menuNumVal);
       break;
   }
 }
