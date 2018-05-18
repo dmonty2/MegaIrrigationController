@@ -102,7 +102,7 @@ void initializeMenu(){
   bitSet(menuBits[menuScheduleStartTime], menuBitInputTime);
 
   // Action item
-  bitSet(menuBits[menuBlowoutZones], menuBitAction);
+  bitSet(menuBits[menuBlowoutZones], menuBitIsAction);
 }
 
 // Track traversing into sub-menus & load settings from memory
@@ -120,6 +120,10 @@ void menuLevelEnter (uint8_t val){
       }
       if (bitRead(menuBits[menuLevel], menuBitInputNumber)){
         menuNumVal = getNumVal(menuLevel); 
+      }
+      if (bitRead(menuBits[menuLevel], menuBitInputText)){
+        menuAsciiPos = 0;
+        menuAsciiVal = _zone_name[0]; 
       }
       if (bitRead(menuBits[menuLevel], menuBitIsNumList)){
         menuNumVal = 1;
@@ -291,10 +295,62 @@ void navigateZoneSchedule(){
   }
 }
 
+// Navigate zone name
 void navigateText(){
-  
+  //  32 space 0-9=48-57; A-Z=65-90 a-z=97-122
+  if (btnCurrent == btnDown ){
+    if ( menuAsciiVal > 1 ){
+      menuAsciiVal = (char)(menuAsciiVal - 1);
+    }
+    if ( menuAsciiVal < 32 ){
+      menuAsciiVal = 122; // z
+    }
+    if ( menuAsciiVal > 32 && menuAsciiVal < 48 ){
+      menuAsciiVal = 32;  // space
+    }
+    if ( menuAsciiVal > 57 && menuAsciiVal < 65 ){
+      menuAsciiVal = 57; // 9
+    }
+    if ( menuAsciiVal > 90 && menuAsciiVal < 97 ){
+      menuAsciiVal = 90; // Z
+    }
+  }
+  if ( btnCurrent == btnUp ){ 
+    menuAsciiVal = (char)(menuAsciiVal + 1);;
+    if ( menuAsciiVal > 122 ){
+      menuAsciiVal = 32; // space
+    }
+    if ( menuAsciiVal > 90 && menuAsciiVal < 97 ){
+      menuAsciiVal = 97;  // 9
+    }
+    if ( menuAsciiVal > 57 && menuAsciiVal < 65 ){
+      menuAsciiVal = 65; // A
+    }
+    if ( menuAsciiVal > 32 && menuAsciiVal < 48 ){
+      menuAsciiVal = 48; // 0
+    }
+  }
+  if (btnCurrent == btnLeft){
+    menuAsciiPos -= 1;
+    if ( menuAsciiPos < 0 ){
+      menuLevelExit();
+    } else {
+      menuAsciiVal = _zone_name[menuAsciiPos];
+    }
+  }
+  if (btnCurrent == btnRight){
+    if ( menuAsciiPos < ZONE_NAME_SIZE ){
+      menuAsciiPos += 1;
+      menuAsciiVal = _zone_name[menuAsciiPos];
+    }
+  }
+  if (btnCurrent == btnSelect){
+    setTextVal(menuLevel);
+    menuLevelExit();
+  }  
 }
 
+//TODO
 void navigateTime(){
   
 }
@@ -390,23 +446,17 @@ void updateDisplay(){
       lcd.print(menuNumVal);
     }
   }
-  // == Text Display ==
+  // == Text Display == TODO
   if (bitRead(menuBits[menuLevel], menuBitInputText)){
     getMenuText(line1, menuSelected);
     lcd.clear();
     lcd.setCursor(0,0);
     lcd.print(line1);
     lcd.setCursor(0,1);
-    if ( menuNumVal == 0 ){
-      strcpy(line2, 0);
-      strcat(line2, " ");
-      strcat(line2, txtDisabled);
-    } else {
-      strcpy(line2, menuNumVal);
-    }
-    lcd.print(line2);
+    _zone_name[menuAsciiPos] = menuAsciiVal;
+    lcd.print(_zone_name);
   }
-  // == Time Display ==
+  // == Time Display == TODO
   if (bitRead(menuBits[menuLevel], menuBitInputTime)){
     getMenuText(line1, menuSelected);
     lcd.clear();
@@ -690,7 +740,6 @@ void setBitVal(menuItems mId){
       }
       return 0;
       break;
-      /*
     case menuZoneEnable:
       return set_zone_is_enabled(menuBoolVal);
       break;
@@ -709,7 +758,6 @@ void setBitVal(menuItems mId){
     case menuScheduleEnable:
       return set_schedule_is_enabled(menuBoolVal);
       break;
-      */
   }
 }
 
@@ -762,6 +810,7 @@ uint16_t getNumVal(menuItems mId){
 }
 
 
+
 void setNumVal(menuItems mId){
   switch (mId){
     case menuNumberOfZones:
@@ -812,6 +861,25 @@ void setNumVal(menuItems mId){
   }
 }
 
+// TODO
+/*
+void getTextVal(menuItems mId){
+  switch (mId){
+    case menuZoneName:
+      return _zone_name;
+      break;
+  }
+}
+*/
+
+// TODO
+void setTextVal(menuItems mId){
+  switch (mId){
+    case menuZoneName:
+      set_zone_name();
+      break;
+  }
+}
 
 void backlightOff(){
   lcd.noBacklight();

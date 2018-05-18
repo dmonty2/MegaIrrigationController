@@ -98,7 +98,7 @@ void run_some_zones(void){
 
 // TODO
 void run_one_zone(uint8_t zone){
-
+  
 }
 
 // TODO
@@ -127,8 +127,7 @@ void wind_sensor_off(void){
   bitClear(_zone_storebits,ZONE_BIT_USE_WIND);
 }
 
-void set_zone_name(char new_name[ZONE_NAME_SIZE]){
-  strcpy(_zone_name,new_name);
+void set_zone_name(){
   EEPROM.updateBlock<char>(ZONE_NAME + _zone_eeprom_offset, _zone_name, sizeof(_zone_name));
 }
 
@@ -140,24 +139,50 @@ bool zone_is_enabled(){
   return bitRead(_zone_storebits,ZONE_BIT_ENABLED);
 }
 
+void set_zone_is_enabled(bool val){
+  saveBit(_zone_storebits, ZONE_BIT_ENABLED, ZONE_STORE_BITS + _zone_eeprom_offset, val);
+}
+
 bool zone_use_moisture(){
   return bitRead(_zone_storebits,ZONE_BIT_USE_MOISTURE);
+}
+
+void set_zone_use_moisture(bool val){
+  saveBit(_zone_storebits, ZONE_BIT_USE_MOISTURE, ZONE_STORE_BITS + _zone_eeprom_offset, val);
 }
 
 bool zone_use_rain(){
   return bitRead(_zone_storebits,ZONE_BIT_USE_RAIN);
 }
 
+void set_zone_use_rain(bool val){
+  saveBit(_zone_storebits, ZONE_BIT_USE_RAIN, ZONE_STORE_BITS + _zone_eeprom_offset, val);
+}
+
 bool zone_use_wind(){
   return bitRead(_zone_storebits,ZONE_BIT_USE_WIND);
+}
+
+void set_zone_use_wind(bool val){
+  saveBit(_zone_storebits, ZONE_BIT_USE_WIND, ZONE_STORE_BITS + _zone_eeprom_offset, val);
 }
 
 bool zone_use_temp(){
   return bitRead(_zone_storebits,ZONE_BIT_USE_TEMP);
 }
 
+void set_zone_use_temp(bool val){
+  saveBit(_zone_storebits, ZONE_BIT_USE_TEMP, ZONE_STORE_BITS + _zone_eeprom_offset, val);
+}
+
 bool zone_use_mini_cycle(){
   return bitRead(_zone_storebits,ZONE_BIT_MINI_CYCLE);
+}
+
+//TODO
+void set_zone_use_mini_cycle(bool val){
+  saveBit(_zone_storebits, ZONE_BIT_MINI_CYCLE, ZONE_STORE_BITS + _zone_eeprom_offset, val);
+  
 }
 
 void set_zone_run_time(uint16_t val){

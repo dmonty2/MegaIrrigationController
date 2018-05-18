@@ -55,7 +55,7 @@ void defaultReset(){
 void menuGoToRoot(){
   menuSelected = menuRoot;
   menuLevel = menuRoot;
-  for ( i = 0; i < 4; i++ ){
+  for (int i = 0; i < 4; i++ ){
     menuParentTree[i] = 0;
   }
 }

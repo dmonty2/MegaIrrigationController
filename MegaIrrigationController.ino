@@ -169,6 +169,8 @@ enum menuItemBits {
 
 uint8_t  menuBoolVal = 0;
 uint16_t menuNumVal = 0;
+char menuAsciiVal = 0;    // Track current char
+int menuAsciiPos = 0;    // Posision in string.
 char menuTextVal[ZONE_NAME_SIZE];
 
 menuItems menuLevel = menuRoot;
@@ -242,7 +244,7 @@ enum systemStates {
   stateRunningSchedule,
   stateRunningAllZones,
   stateRunningSomeZones
-}
+};
 systemStates _systemState = stateOff;  // Track system state.
 
 
