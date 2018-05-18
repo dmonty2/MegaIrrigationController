@@ -20,7 +20,7 @@ void initScheduleConfig(){
 void loadScheduleConfig(uint8_t num){
   _schedule_number = num;
   set_schedule_eeprom_offset();
-  _schedule_storebits = EEPROM.readByte(SCHEDULE_STORE_BITS + _schedule_eeprom_offset);
+  _schedule_storebits = EEPROM.readInt(SCHEDULE_STORE_BITS + _schedule_eeprom_offset);
   _schedule_start_time = EEPROM.readInt(SCHEDULE_START_TIME + _schedule_eeprom_offset);
   _schedule_repeat_delay = EEPROM.readInt(SCHEDULE_REPEAT_DELAY + _schedule_eeprom_offset);
   _schedule_every_nth_day = EEPROM.readInt(SCHEDULE_EVERY_NTH_DAY + _schedule_eeprom_offset);

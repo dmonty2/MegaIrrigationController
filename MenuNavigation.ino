@@ -101,6 +101,9 @@ void initializeMenu(){
   // Time item
   bitSet(menuBits[menuScheduleStartTime], menuBitInputTime);
 
+  // Day item
+  bitSet(menuBits[menuScheduleDay], menuBitInputDay);
+
   // Action item
   bitSet(menuBits[menuBlowoutZones], menuBitIsAction);
 }
@@ -125,8 +128,11 @@ void menuLevelEnter (uint8_t val){
         menuAsciiPos = 0;
         menuAsciiVal = _zone_name[0]; 
       }
+      if (bitRead(menuBits[menuLevel], menuBitInputDay)){
+        menuNumVal = 1; 
+      }
       if (bitRead(menuBits[menuLevel], menuBitIsNumList)){
-        menuNumVal = 1;
+        menuListVal = 1;
       }
       return;
     }
@@ -208,6 +214,8 @@ void checkButtonPress(){
       navigateTime();
     } else if (bitRead(menuBits[menuLevel], menuBitIsNumList)){
       navigateZoneSchedule();
+    } else if (bitRead(menuBits[menuLevel], menuBitInputDay)){
+      navigateDaySchedule();
     }
     
     updateDisplay();
@@ -268,30 +276,47 @@ void navigateNumberChooser(){
 
 // Navigating a List of Zones or Schedules
 void navigateZoneSchedule(){
-  if (btnCurrent == btnDown && menuNumVal > 1){
-      menuNumVal -= 1;
+  if (btnCurrent == btnDown && menuListVal > 1){
+      menuListVal -= 1;
   }
   uint8_t max_num = 1;
   if ( menuLevel == menuZones ){ max_num = _num_zones; }
   if ( menuLevel == menuSchedules ){ max_num = NUMBER_OF_SCHEDULES; }
-  if ( btnCurrent == btnUp && menuNumVal < max_num ){
-      menuNumVal += 1;
+  if ( btnCurrent == btnUp && menuListVal < max_num ){
+      menuListVal += 1;
   }
-  if ( menuNumVal <= 0 || menuNumVal > max_num ){
-    menuNumVal = 1;
+  if ( menuListVal <= 0 || menuListVal > max_num ){
+    menuListVal = 1;
   }
   if (btnCurrent == btnLeft){
     menuLevelExit();
   }
   if (btnCurrent == btnRight){
     if (menuLevel == menuZones){
-      loadZoneConfig(menuNumVal);
+      loadZoneConfig(menuListVal);
       menuLevelEnter(menuZone);
     }
     if (menuLevel == menuSchedules){
-      loadScheduleConfig(menuNumVal);
+      loadScheduleConfig(menuListVal);
       menuLevelEnter(menuSchedule);
     }
+  }
+}
+
+// Navigate Sun-Sat,All,Even,Odd
+void navigateDaySchedule(){
+  if (btnCurrent == btnDown && menuNumVal > SCHEDULE_BIT_SUN){
+      menuNumVal -= 1;
+  }
+  if ( btnCurrent == btnUp && menuNumVal < SCHEDULE_BIT_ODD){
+      menuNumVal += 1;
+  }
+  if (btnCurrent == btnLeft){
+    menuLevelExit();
+  }
+  if (btnCurrent == btnSelect || btnCurrent == btnRight){
+    bool new_val = ! schedule_day_bit(menuNumVal);
+    set_schedule_day_bit((uint16_t)menuNumVal ,new_val);
   }
 }
 
@@ -339,7 +364,7 @@ void navigateText(){
     }
   }
   if (btnCurrent == btnRight){
-    if ( menuAsciiPos < ZONE_NAME_SIZE ){
+    if ( menuAsciiPos < ZONE_NAME_SIZE - 2 ){
       menuAsciiPos += 1;
       menuAsciiVal = _zone_name[menuAsciiPos];
     }
@@ -446,7 +471,7 @@ void updateDisplay(){
       lcd.print(menuNumVal);
     }
   }
-  // == Text Display == TODO
+  // == Text Display ==
   if (bitRead(menuBits[menuLevel], menuBitInputText)){
     getMenuText(line1, menuSelected);
     lcd.clear();
@@ -457,20 +482,49 @@ void updateDisplay(){
     lcd.print(_zone_name);
   }
   // == Time Display == TODO
-  if (bitRead(menuBits[menuLevel], menuBitInputTime)){
+  if (bitRead(menuBits[menuLevel], menuBitInputDay)){
     getMenuText(line1, menuSelected);
     lcd.clear();
     lcd.setCursor(0,0);
     lcd.print(line1);
     lcd.setCursor(0,1);
-    if ( menuNumVal == 0 ){
-      strcpy(line2, 0);
-      strcat(line2, " ");
-      strcat(line2, txtDisabled);
+    bool currentVal = getBitVal(menuLevel);
+    if ( menuNumVal >=1 && menuNumVal <= 7 ){
+      strcpy(line2, dayStr(menuNumVal));
+      strcat(line2, " *");
     } else {
       strcpy(line2, menuNumVal);
     }
     lcd.print(line2);
+  }
+  // == Day Display ==
+  if (bitRead(menuBits[menuLevel], menuBitInputDay)){
+    getMenuText(line1, menuSelected);
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print(line1);
+    lcd.setCursor(0,1);
+    if ( menuNumVal >= SCHEDULE_BIT_SUN && menuNumVal <= SCHEDULE_BIT_SAT ){
+      strcpy(line2, dayStr(menuNumVal));
+    } else if (menuNumVal == SCHEDULE_BIT_ANY_DAY) {
+      strcpy(line2, txtAny);
+      strcat(line2, " ");
+      strcat(line2, txtDay);
+    } else if (menuNumVal == SCHEDULE_BIT_EVEN) {
+      strcpy(line2, txtEven);
+    } else if (menuNumVal == SCHEDULE_BIT_ODD) {
+      strcpy(line2, txtOdd);
+    }
+    //else if (menuNumVal == SCHEDULE_BIT_NTH_DAY) {
+    //  strcpy(line2, "Nth");
+    //}
+    if ( schedule_day_bit(menuNumVal) ){
+      strcat(line2, " *");
+    }
+    line2[0] = toupper(line2[0]);
+    lcd.print(line2);
+    Serial.println(menuNumVal);
+    Serial.println(_schedule_storebits);
   }
   // == Zone or Schedule # Chooser Display ==
   if (bitRead(menuBits[menuLevel],menuBitIsNumList)){
@@ -480,7 +534,7 @@ void updateDisplay(){
     lcd.print(line1);
     lcd.setCursor(0,1);
     lcd.print("> ");
-    lcd.print(menuNumVal);
+    lcd.print(menuListVal);
   }
 
 }
@@ -583,6 +637,7 @@ void getMenuText(char *dest, menuItems mId){
       strcpy(dest, txtBlowout);
       strcat(dest, " ");
       strcat(dest, txtWait);
+      strcat(dest, " S");
       break;
     case menuSetTime:
       strcpy(dest, txtSet);
@@ -608,6 +663,7 @@ void getMenuText(char *dest, menuItems mId){
       strcat(dest, txtRun);
       strcat(dest, " ");
       strcat(dest, txtTime);
+      strcat(dest, " M");
       break;
     case menuZonePin:
       strcpy(dest, txtZone);
@@ -641,6 +697,7 @@ void getMenuText(char *dest, menuItems mId){
       strcpy(dest, txtBlowout);
       strcat(dest, " ");
       strcat(dest, txtTime);
+      strcat(dest, " S");
       break;
     case menuBlowoutCycles:
       strcpy(dest, txtBlowout);
@@ -667,14 +724,13 @@ void getMenuText(char *dest, menuItems mId){
       strcpy(dest, txtStart);
       strcat(dest, " ");
       strcat(dest, txtTime);
-      strcat(dest, "1");
+      //strcat(dest, "1");  //TODO?
       break;
     case menuScheduleRepeatDelay:
       strcpy(dest, txtRepeat);
       strcat(dest, " ");
       strcat(dest, txtDelay);
-      break;
-      
+      break;    
   }
   dest[0] = toupper(dest[0]);
 }
@@ -844,16 +900,16 @@ void setNumVal(menuItems mId){
       return set_zone_pin(menuNumVal);
       break;
     case menuMoistureID:
-      return set_moisture_id(menuNumVal);
+      return set_zone_moisture_id(menuNumVal);
       break;
     case menuDryLevel:
-      return set_dry_level(menuNumVal);
+      return set_zone_dry_level(menuNumVal);
       break;
     case menuBlowoutTime:
-      return set_blowout_time(menuNumVal);
+      return set_zone_blowout_time(menuNumVal);
       break;
     case menuBlowoutCycles:
-      return set_blowout_cycles(menuNumVal);
+      return set_zone_blowout_cycles(menuNumVal);
       break;
     case menuRunSchedule:
       runSchedule(menuNumVal);

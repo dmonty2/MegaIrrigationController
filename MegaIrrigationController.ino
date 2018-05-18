@@ -78,18 +78,18 @@
 #define ZONE_BIT_MINI_CYCLE   6 // prevent runoff on steep slopes.
 
 // Map Store bits for Schedule
-#define SCHEDULE_BIT_ENABLED  0 // Set to 1 to enable
-#define SCHEDULE_BIT_SUN      1 // First day of week bit 1 is also 1 : )
-#define SCHEDULE_BIT_MON      2
-#define SCHEDULE_BIT_TUE      3
-#define SCHEDULE_BIT_WED      4
-#define SCHEDULE_BIT_THU      5
-#define SCHEDULE_BIT_FRI      6
-#define SCHEDULE_BIT_SAT      7
-#define SCHEDULE_BIT_ANY_DAY  8 // Water any/every day
-#define SCHEDULE_BIT_EVEN     9 // Water even days
-#define SCHEDULE_BIT_ODD     10 // Water odd days
-#define SCHEDULE_BIT_NTH_DAY 11
+#define SCHEDULE_BIT_ENABLED   0 // Set to 1 to enable
+#define SCHEDULE_BIT_SUN       1 // First day of week bit 1 is also 1 : )
+#define SCHEDULE_BIT_MON       2
+#define SCHEDULE_BIT_TUE       3
+#define SCHEDULE_BIT_WED       4
+#define SCHEDULE_BIT_THU       5
+#define SCHEDULE_BIT_FRI       6
+#define SCHEDULE_BIT_SAT       7
+#define SCHEDULE_BIT_ANY_DAY 8 // Water any/every day
+#define SCHEDULE_BIT_EVEN      9 // Water even days
+#define SCHEDULE_BIT_ODD      10 // Water odd days
+#define SCHEDULE_BIT_NTH_DAY  11 // TODO - not needed right now
 
 // ============= LCD & keypad =============
 // LCD library supports broken backlight bug.
@@ -163,15 +163,17 @@ enum menuItemBits {
   menuBitInputNumber, // Leaf Number
   menuBitInputText,   // Leaf Text
   menuBitInputTime,   // Leaf Time
+  menuBitInputDay,    // Leaf Sun Mon Tue... Even Odd Nth
   menuBitIsNumList,   // Branch List of Zones or Schedules 1,2,3,4...n
   menuBitIsAction     // Immediate action - stop, run all, blow out all
 };
 
 uint8_t  menuBoolVal = 0;
 uint16_t menuNumVal = 0;
+uint8_t  menuListVal = 0;
 char menuAsciiVal = 0;    // Track current char
 int menuAsciiPos = 0;    // Posision in string.
-char menuTextVal[ZONE_NAME_SIZE];
+//char menuTextVal[ZONE_NAME_SIZE];
 
 menuItems menuLevel = menuRoot;
 menuItems menuSelected = menuActions;

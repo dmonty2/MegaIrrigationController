@@ -38,11 +38,23 @@ void resetZoneConfig(){
     _zone_storebits = 0;
     set_zone_run_time(10);
     set_zone_pin(0);
-    set_moisture_id(0);
-    //set_zone_name(Zone#); // TODO
-    set_dry_level(0);
-    set_blowout_time(40);
-    set_blowout_cycles(4);
+    set_zone_moisture_id(0);
+    // Fill in default "Zone 1 " "Zone 2 " including trailing whitespace
+    strcpy(_zone_name, "Zone ");
+    char num[3];
+    itoa(i, num, 10);
+    strcat(_zone_name, num);
+    if (i <= 9){
+      strcat(_zone_name, " ");
+    }
+    //Fill in rest of bits with " " whitespace.
+    for (int n=8; n < ZONE_NAME_SIZE; n++){
+      strcat(_zone_name, " ");
+    }
+    set_zone_name();  // Write to eeprom
+    set_zone_dry_level(0);
+    set_zone_blowout_time(40);
+    set_zone_blowout_cycles(4);
   }  
 }
 
@@ -200,19 +212,19 @@ void set_zone_pin(uint16_t val){
   _zone_pin = val;
   EEPROM.writeByte(ZONE_PIN + _zone_eeprom_offset, val);
 }
-void set_moisture_id(uint16_t val){
+void set_zone_moisture_id(uint16_t val){
   _zone_moisture_id = val;
   EEPROM.writeInt(ZONE_MOISTURE_ID + _zone_eeprom_offset, val);
 }
-void set_dry_level(uint16_t val){
+void set_zone_dry_level(uint16_t val){
   _zone_is_dry_value = val;
   EEPROM.writeInt(ZONE_IS_DRY_VALUE + _zone_eeprom_offset, val);
 }
-void set_blowout_time(uint16_t val){
+void set_zone_blowout_time(uint16_t val){
   _zone_blowout_time = val;
   EEPROM.writeInt(ZONE_BLOWOUT_TIME + _zone_eeprom_offset, val);
 }
-void set_blowout_cycles(uint16_t val){
+void set_zone_blowout_cycles(uint16_t val){
   if (val >= 255){
     val = 255;
   }
