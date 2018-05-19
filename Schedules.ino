@@ -100,7 +100,7 @@ void set_schedule_eeprom_offset(){
     num = 0;
     _schedule_number = 1;
   }
-  _schedule_eeprom_offset = (int)(_eeprom_start_addr + IRR_EEPROM_BYTES + (num * SCHEDULE_EEPROM_BYTES));
+  _schedule_eeprom_offset = (int)(_eeprom_start_addr + IRR_EEPROM_BYTES + (num * SCHEDULE_EEPROM_BYTES)); 
 }
 
 bool schedule_is_enabled(){

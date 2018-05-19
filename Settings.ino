@@ -9,7 +9,6 @@
 
 
 void initSettingsConfig(){
-  //Serial.println("Loading settings");
   _eeprom_version = EEPROM.readByte(EEPROM_VERSION + _eeprom_start_addr);
   _storebits = EEPROM.readByte(IRR_STORE_BITS + _eeprom_start_addr);
   _is_enabled = is_enabled();

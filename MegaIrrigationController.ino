@@ -44,7 +44,7 @@
 #define SCHEDULE_STORE_BITS 0                                //  2 uint16_t
 #define SCHEDULE_START_TIME ( SCHEDULE_STORE_BITS + 2 )      //  4 uint16_t start time e.g. 6AM (minutes since midnight)
 #define SCHEDULE_REPEAT_DELAY ( SCHEDULE_START_TIME + 2 )    //  8 uint16_t delay before repeating 0.
-#define SCHEDULE_EVERY_NTH_DAY ( SCHEDULE_REPEAT_DELAY + 2 ) //  9 unit8_t every nth day
+#define SCHEDULE_EVERY_NTH_DAY ( SCHEDULE_REPEAT_DELAY + 2 ) //  9 unit8_t every nth day TODO - not implemented
 #define SCHEDULE_ZONES ( SCHEDULE_EVERY_NTH_DAY + 1 )        //  13 uint32_t 32 zones.
 #define SCHEDULE_EEPROM_BYTES 16 // EEPROM Bytes needed for each schedule with 4 spare bites for growth
 
@@ -86,7 +86,7 @@
 #define SCHEDULE_BIT_THU       5
 #define SCHEDULE_BIT_FRI       6
 #define SCHEDULE_BIT_SAT       7
-#define SCHEDULE_BIT_ANY_DAY 8 // Water any/every day
+#define SCHEDULE_BIT_ANY_DAY   8 // Water any/every day
 #define SCHEDULE_BIT_EVEN      9 // Water even days
 #define SCHEDULE_BIT_ODD      10 // Water odd days
 #define SCHEDULE_BIT_NTH_DAY  11 // TODO - not needed right now
@@ -173,8 +173,7 @@ uint8_t  menuBoolVal = 0;
 uint16_t menuNumVal = 0;
 uint8_t  menuListVal = 0;
 char menuAsciiVal = 0;    // Track current char
-int menuAsciiPos = 0;    // Posision in string.
-//char menuTextVal[ZONE_NAME_SIZE];
+int menuPosition = 0;    // Posision in string.
 
 menuItems menuLevel = menuRoot;
 menuItems menuSelected = menuActions;
@@ -346,8 +345,9 @@ void checkSensors(){
 
 void init_irrigation(){
   // Leave space for MySensors eeprom.
-  int eeprom_start = EEPROM_LOCAL_CONFIG_ADDRESS + 255;  
+  int eeprom_start = EEPROM_LOCAL_CONFIG_ADDRESS + 255;
   _eeprom_start_addr = eeprom_start;
+  EEPROM.setMaxAllowedWrites(4096);
   EEPROM.setMemPool(eeprom_start, EEPROMSizeMega);  // TODO this line may not be needed.
   uint8_t stored_version = EEPROM.readByte(IRR_EEPROM_VERSION + _eeprom_start_addr);
   if (stored_version == 0 || stored_version == 255){

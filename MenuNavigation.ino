@@ -128,8 +128,12 @@ void menuLevelEnter (uint8_t val){
         menuNumVal = getNumVal(menuLevel); 
       }
       if (bitRead(menuBits[menuLevel], menuBitInputText)){
-        menuAsciiPos = 0;
+        menuPosition = 0;
         menuAsciiVal = _zone_name[0]; 
+      }
+      if (bitRead(menuBits[menuLevel], menuBitInputTime)){
+        menuNumVal = getNumVal(menuLevel); 
+        menuPosition = 1;
       }
       if (bitRead(menuBits[menuLevel], menuBitInputDay)){
         menuNumVal = 1; 
@@ -381,17 +385,17 @@ void navigateText(){
     }
   }
   if (btnCurrent == btnLeft){
-    menuAsciiPos -= 1;
-    if ( menuAsciiPos < 0 ){
+    menuPosition -= 1;
+    if ( menuPosition < 0 ){
       menuLevelExit();
     } else {
-      menuAsciiVal = _zone_name[menuAsciiPos];
+      menuAsciiVal = _zone_name[menuPosition];
     }
   }
   if (btnCurrent == btnRight){
-    if ( menuAsciiPos < ZONE_NAME_SIZE - 2 ){
-      menuAsciiPos += 1;
-      menuAsciiVal = _zone_name[menuAsciiPos];
+    if ( menuPosition < ZONE_NAME_SIZE - 2 ){
+      menuPosition += 1;
+      menuAsciiVal = _zone_name[menuPosition];
     }
   }
   if (btnCurrent == btnSelect){
@@ -400,9 +404,70 @@ void navigateText(){
   }  
 }
 
-//TODO
+// Navigate time chooser, hour:minute AM/PM
 void navigateTime(){
-  
+  int tmpTime = (int)menuNumVal;
+  if (btnCurrent == btnDown){
+    if (menuPosition == 1){ //hour
+      if (tmpTime - 60 <= 0){
+        tmpTime = tmpTime + (24*60) - 60;
+      } else {
+        tmpTime -= 60;
+      }
+    }
+    if (menuPosition == 2){ //mintue
+      if (tmpTime - 1 <= 0){
+        tmpTime = tmpTime + (24*60) - 1;
+      } else {
+        tmpTime -= 1;
+      }
+    }
+    if (menuPosition == 3){ //AM/PM
+      if (tmpTime - (12*60) <= 0){
+        tmpTime = tmpTime + (24*60) - (12*60);
+      } else {
+        tmpTime -= (12*60);
+      }
+    }
+  }
+  if ( btnCurrent == btnUp ){
+    if (menuPosition == 1){ //hour
+      if (tmpTime + 60 >= (24*60)){
+        tmpTime = tmpTime - (24*60) + 60;
+      } else {
+        tmpTime += 60;
+      }
+    }
+    if (menuPosition == 2){ //mintue
+      if (tmpTime + 1 >= (24*60)){
+        tmpTime = tmpTime - (24*60) + 1;
+      } else {
+        tmpTime += 1;
+      }
+    }
+    if (menuPosition == 3){ //AM/PM
+      if (tmpTime + (12*60) >= (24*60)){
+        tmpTime = tmpTime - (24*60) + (12*60);
+      } else {
+        tmpTime += (12*60);
+      }
+    }
+  }
+  menuNumVal = (uint16_t)tmpTime;
+  if (btnCurrent == btnLeft){
+    menuPosition -= 1;
+    if ( menuPosition < 0 ){
+      menuLevelExit();
+    }
+  }
+  if (btnCurrent == btnRight){
+    if ( menuPosition < 3 ){
+      menuPosition += 1;
+    }
+  }
+  if (btnCurrent == btnSelect){
+    setNumVal(menuLevel);
+  } 
 }
 
 /*
@@ -503,22 +568,44 @@ void updateDisplay(){
     lcd.setCursor(0,0);
     lcd.print(line1);
     lcd.setCursor(0,1);
-    _zone_name[menuAsciiPos] = menuAsciiVal;
+    _zone_name[menuPosition] = menuAsciiVal;
     lcd.print(_zone_name);
   }
-  // == Time Display == TODO
-  if (bitRead(menuBits[menuLevel], menuBitInputDay)){
+  // == Time Display ==
+  if (bitRead(menuBits[menuLevel], menuBitInputTime)){
     getMenuText(line1, menuSelected);
     lcd.clear();
     lcd.setCursor(0,0);
     lcd.print(line1);
     lcd.setCursor(0,1);
-    bool currentVal = getBitVal(menuLevel);
-    if ( menuNumVal >=1 && menuNumVal <= 7 ){
-      strcpy(line2, dayStr(menuNumVal));
-      strcat(line2, " *");
+    uint16_t currentVal = menuNumVal;
+    uint16_t menuMinute = currentVal % 60;
+    uint16_t menuHour = (currentVal / 60) % 24;
+    bool pm = false;
+    if ( menuHour > 12 ){
+      pm = true;
+      menuHour -= 12;
+    }
+    char num[3];
+    itoa(menuHour, num, 10);
+    if ( menuHour < 10 ){
+      strcpy(line2, " ");
+      strcat(line2,num);
     } else {
-      strcpy(line2, menuNumVal);
+      strcpy(line2,num);
+    }
+    strcat(line2,":");
+    itoa(menuMinute, num, 10);
+    if ( menuMinute < 10 ){
+      strcat(line2, "0");
+      strcat(line2,num);
+    } else {
+      strcpy(line2,num);
+    }
+    if ( pm == true ){
+      strcat(line2," PM");
+    } else {
+      strcat(line2," AM");
     }
     lcd.print(line2);
   }
@@ -548,8 +635,6 @@ void updateDisplay(){
     }
     line2[0] = toupper(line2[0]);
     lcd.print(line2);
-    Serial.println(menuNumVal);
-    Serial.println(_schedule_storebits);
   }
     // == Zone Selector Display == TODO
   if (bitRead(menuBits[menuLevel], menuBitInputZones)){
@@ -903,6 +988,9 @@ uint16_t getNumVal(menuItems mId){
     case menuBlowoutCycles:
       return _zone_blow_cycles;
       break;
+    case menuScheduleStartTime:
+      return _schedule_start_time;
+      break;
   }
 }
 
@@ -954,6 +1042,9 @@ void setNumVal(menuItems mId){
       break;
     case menuRunSchedule:
       runSchedule(menuNumVal);
+      break;
+    case menuScheduleStartTime:
+      set_schedule_start_time(menuNumVal);
       break;
   }
 }
