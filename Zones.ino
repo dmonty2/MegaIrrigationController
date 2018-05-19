@@ -15,7 +15,8 @@ void initZoneConfig(){
 
 // Caculate each zone's EEPROM area.
 void set_zone_eeprom_offset(){
-  _zone_eeprom_offset = (int)(_eeprom_start_addr + (((int)_zone_number - 1) * ZONE_EEPROM_BYTES));
+  int _schedule_eeprom_end = (int)(_eeprom_start_addr + IRR_EEPROM_BYTES + (NUMBER_OF_SCHEDULES * SCHEDULE_EEPROM_BYTES));
+  _zone_eeprom_offset = (int)(_schedule_eeprom_end + (((int)_zone_number - 1) * ZONE_EEPROM_BYTES));
 }
 
 // Called from menu.

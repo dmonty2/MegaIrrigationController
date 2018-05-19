@@ -103,6 +103,9 @@ void initializeMenu(){
 
   // Day item
   bitSet(menuBits[menuScheduleDay], menuBitInputDay);
+  
+  // Zone Selector
+  bitSet(menuBits[menuScheduleZones], menuBitInputZones);
 
   // Action item
   bitSet(menuBits[menuBlowoutZones], menuBitIsAction);
@@ -129,6 +132,9 @@ void menuLevelEnter (uint8_t val){
         menuAsciiVal = _zone_name[0]; 
       }
       if (bitRead(menuBits[menuLevel], menuBitInputDay)){
+        menuNumVal = 1; 
+      }
+      if (bitRead(menuBits[menuLevel], menuBitInputZones)){
         menuNumVal = 1; 
       }
       if (bitRead(menuBits[menuLevel], menuBitIsNumList)){
@@ -216,6 +222,8 @@ void checkButtonPress(){
       navigateZoneSchedule();
     } else if (bitRead(menuBits[menuLevel], menuBitInputDay)){
       navigateDaySchedule();
+    } else if (bitRead(menuBits[menuLevel], menuBitInputZones)){
+      navigateZonesSelector();
     }
     
     updateDisplay();
@@ -317,6 +325,23 @@ void navigateDaySchedule(){
   if (btnCurrent == btnSelect || btnCurrent == btnRight){
     bool new_val = ! schedule_day_bit(menuNumVal);
     set_schedule_day_bit((uint16_t)menuNumVal ,new_val);
+  }
+}
+
+// Multi-select zones 
+void navigateZonesSelector(){
+  if (btnCurrent == btnDown && menuNumVal > 1){
+      menuNumVal -= 1;
+  }
+  if ( btnCurrent == btnUp && menuNumVal < _num_zones){
+      menuNumVal += 1;
+  }
+  if (btnCurrent == btnLeft){
+    menuLevelExit();
+  }
+  if (btnCurrent == btnSelect || btnCurrent == btnRight){
+    bool new_val = ! schedule_water_zone(menuNumVal);
+    set_schedule_water_zone((uint16_t)menuNumVal, new_val);
   }
 }
 
@@ -525,6 +550,22 @@ void updateDisplay(){
     lcd.print(line2);
     Serial.println(menuNumVal);
     Serial.println(_schedule_storebits);
+  }
+    // == Zone Selector Display == TODO
+  if (bitRead(menuBits[menuLevel], menuBitInputZones)){
+    getMenuText(line1, menuSelected);
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print(line1);
+    lcd.setCursor(0,1);
+    if ( menuNumVal >=1 && menuNumVal <= _num_zones ){
+      loadZoneConfig(menuNumVal);
+      strcpy(line2, _zone_name);
+    }
+    if (schedule_water_zone(menuNumVal)){
+      strcat(line2, " *");
+    }
+    lcd.print(line2);
   }
   // == Zone or Schedule # Chooser Display ==
   if (bitRead(menuBits[menuLevel],menuBitIsNumList)){

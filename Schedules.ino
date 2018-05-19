@@ -94,7 +94,7 @@ void runSchedule(int schedule_num){
 // Caculate each zone's EEPROM area.
 void set_schedule_eeprom_offset(){
   // when addressing eeprom schedule num starts at zero;
-  int num = _schedule_number;
+  int num = (int)_schedule_number;
   num -= 1;
   if ( num <= -1 ){
     num = 0;

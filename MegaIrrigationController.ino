@@ -164,6 +164,7 @@ enum menuItemBits {
   menuBitInputText,   // Leaf Text
   menuBitInputTime,   // Leaf Time
   menuBitInputDay,    // Leaf Sun Mon Tue... Even Odd Nth
+  menuBitInputZones,  // Leaf Multi-select Zones.
   menuBitIsNumList,   // Branch List of Zones or Schedules 1,2,3,4...n
   menuBitIsAction     // Immediate action - stop, run all, blow out all
 };
