@@ -83,10 +83,10 @@ void initializeMenu(){
     bitSet(menuBits[itemsYN[idx]],menuBitInputYesNo);
   }
   // Number Menu Items
-  num_items = 15;
-  int itemsNum[num_items] = { menuNumberOfZones, menuMasterPin, menuRainPin, menuRainID, menuTempID, menuWindID,
-                       menuWeatherID, menuBlowoutWait, menuZoneRunTime, menuZonePin, menuMoistureID,
-                       menuDryLevel, menuBlowoutTime, menuBlowoutCycles, menuRunSchedule };
+  num_items = 16;
+  int itemsNum[num_items] = { menuNumberOfZones, menuMasterPin, menuRainPin, menuRainID, menuTempID,
+                       menuWindID, menuWeatherID, menuBlowoutWait, menuZoneRunTime, menuZonePin, menuMoistureID,
+                       menuDryLevel, menuBlowoutTime, menuBlowoutCycles, menuRunSchedule, menuScheduleRepeatDelay };
   for (idx=0; idx < num_items; idx++){
     bitSet(menuBits[itemsNum[idx]],menuBitInputNumber);
   }
@@ -270,7 +270,6 @@ void naviagteYesNo(){
 }
 
 // Navigating a Number chooser e.g. ID, PIN, etc.
-// TODO if we are navigating menuScheduleRepeatDelay skip from 0 to sum of all zone times.
 void navigateNumberChooser(){
   if (btnCurrent == btnDown && menuNumVal > 0){
       menuNumVal -= 1;
@@ -453,6 +452,14 @@ void navigateTime(){
       }
     }
   }
+  if (tmpTime >= (24*60)){
+    tmpTime -= (24*60);
+  }
+  if (tmpTime < 0){
+    tmpTime += (24*60);
+  }
+  Serial.print("menuNumVal:"); Serial.println(menuNumVal);
+  Serial.print("tmpTime:"); Serial.println(tmpTime);
   menuNumVal = (uint16_t)tmpTime;
   if (btnCurrent == btnLeft){
     menuPosition -= 1;
@@ -578,15 +585,20 @@ void updateDisplay(){
     lcd.setCursor(0,0);
     lcd.print(line1);
     lcd.setCursor(0,1);
-    uint16_t currentVal = menuNumVal;
-    uint16_t menuMinute = currentVal % 60;
-    uint16_t menuHour = (currentVal / 60) % 24;
-    bool pm = false;
-    if ( menuHour > 12 ){
-      pm = true;
+    int currentVal = menuNumVal;
+    int menuMinute = currentVal % 60;
+    int menuHour = (currentVal / 60) % 24;
+    if (menuHour == 0){
+      menuHour = 12;
+    } else if (menuHour > 12){
       menuHour -= 12;
     }
+    bool pm = false;
+    if ( currentVal >= (12*60)){
+      pm = true;
+    }
     char num[3];
+    Serial.print("menuHour:"); Serial.println(menuHour);
     itoa(menuHour, num, 10);
     if ( menuHour < 10 ){
       strcpy(line2, " ");
@@ -595,12 +607,13 @@ void updateDisplay(){
       strcpy(line2,num);
     }
     strcat(line2,":");
+    Serial.print("menuMinute:"); Serial.println(menuMinute);
     itoa(menuMinute, num, 10);
     if ( menuMinute < 10 ){
       strcat(line2, "0");
       strcat(line2,num);
     } else {
-      strcpy(line2,num);
+      strcat(line2,num);
     }
     if ( pm == true ){
       strcat(line2," PM");
@@ -856,6 +869,7 @@ void getMenuText(char *dest, menuItems mId){
       strcpy(dest, txtRepeat);
       strcat(dest, " ");
       strcat(dest, txtDelay);
+      strcat(dest, " M");
       break;    
   }
   dest[0] = toupper(dest[0]);
@@ -991,6 +1005,9 @@ uint16_t getNumVal(menuItems mId){
     case menuScheduleStartTime:
       return _schedule_start_time;
       break;
+    case menuScheduleRepeatDelay:
+      return _schedule_repeat_delay;
+      break;
   }
 }
 
@@ -1045,6 +1062,9 @@ void setNumVal(menuItems mId){
       break;
     case menuScheduleStartTime:
       set_schedule_start_time(menuNumVal);
+      break;
+    case menuScheduleRepeatDelay:
+      set_schedule_repeat_delay(menuNumVal);
       break;
   }
 }
