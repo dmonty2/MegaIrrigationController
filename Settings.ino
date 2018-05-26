@@ -13,7 +13,7 @@ void initSettingsConfig(){
   _storebits = EEPROM.readByte(IRR_STORE_BITS + _eeprom_start_addr);
   _is_enabled = is_enabled();
   _num_zones = EEPROM.readByte(IRR_NUM_ZONES + _eeprom_start_addr);
-  if (_num_zones == 0 || _num_zones == 255){
+  if (_num_zones == 0 || _num_zones > MAX_NUM_ZONES){
     _num_zones = 5;
   }
   _master_valve_pin = EEPROM.readByte(IRR_MASTER_VALVE_PIN + _eeprom_start_addr);
@@ -129,11 +129,11 @@ void set_rain_normally_open(bool val){
   saveBit(_storebits, SETTING_BIT_RAIN_NORMALLY_OPEN, IRR_STORE_BITS + _eeprom_start_addr, val);
 }
 
-void set_number_of_zones(uint16_t val){
-  if (val >= 255){
-    val = 255;
+void set_number_of_zones(uint16_t num){
+  if (num > MAX_NUM_ZONES){
+    num = MAX_NUM_ZONES;
   }
-  _num_zones = val;
+  _num_zones = num;
   EEPROM.writeByte(IRR_NUM_ZONES + _eeprom_start_addr, val);
 }
 

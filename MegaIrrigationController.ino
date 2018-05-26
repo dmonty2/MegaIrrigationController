@@ -1,3 +1,4 @@
+
 /*
  * Description: Irrigation Controller with MySensors integration
  * Author: Dean Montgomery
@@ -49,6 +50,7 @@
 #define SCHEDULE_EEPROM_BYTES 16 // EEPROM Bytes needed for each schedule with 4 spare bites for growth
 
 // Zone EEPROM Map
+#define MAX_NUM_ZONES 20                            // Maximum number of zones.
 #define ZONE_STORE_BITS 0                           //  1 uint8_t
 #define ZONE_PIN (ZONE_STORE_BITS + 1)              //  2 uint8_t
 #define ZONE_NAME (ZONE_PIN + 1)                    // 17 char[15] ZONE_NAME_SIZE
@@ -57,6 +59,7 @@
 #define ZONE_BLOWOUT_CYCLES (ZONE_BLOWOUT_TIME + 2) // 21 uint8_t
 #define ZONE_IS_DRY_VALUE (ZONE_BLOWOUT_CYCLES + 1) // 23 uint16_t
 #define ZONE_MOISTURE_ID (ZONE_IS_DRY_VALUE + 2)    // 25 uint16_t
+#define ZONE_INITIALIZED (ZONE_MOISTURE_ID + 1)     // 26 uint8_t tag eeprom when set/reset with 170=10101010
 // With spare (5 bytes)
 #define ZONE_EEPROM_BYTES 30 // EEPROM Bytes needed for each zone;
 
@@ -166,6 +169,7 @@ enum menuItemBits {
   menuBitInputDay,    // Leaf Sun Mon Tue... Even Odd Nth
   menuBitInputZones,  // Leaf Multi-select Zones.
   menuBitIsNumList,   // Branch List of Zones or Schedules 1,2,3,4...n
+  menuBitRunSomeZones,// Leaf to run some zones with manual time select.
   menuBitIsAction     // Immediate action - stop, run all, blow out all
 };
 
@@ -173,7 +177,7 @@ uint8_t  menuBoolVal = 0;
 uint16_t menuNumVal = 0;
 uint8_t  menuListVal = 0;
 char menuAsciiVal = 0;    // Track current char
-int menuPosition = 0;    // Posision in string.
+int menuPosition = 0;     // Posision in string.
 
 menuItems menuLevel = menuRoot;
 menuItems menuSelected = menuActions;
@@ -270,6 +274,8 @@ unsigned long _zone_timer_end = 0;     // Timer for zone.
 uint16_t _zone_previous_moisture = 0;  // Previous 
 uint16_t _zone_current_moisture = 0;   // Current Mosture sensor value
 int      _zone_eeprom_offset = 0;      // EEPROM address offset for this zone.
+uint8_t  _manual_zones_time[MAX_NUM_ZONES]; // For manual run zones.
+uint8_t  _manual_zones_running = 0;    // Track manual running zones.
 
 // Schedule saved in EEPROM
 uint8_t  _schedule_number = 0;        // 1 Schedule Number
@@ -302,6 +308,34 @@ void presentation()
   //wait(LONG_WAIT);
 }
 
+// receive time from Controller.
+void receiveTime(unsigned long time) {
+  setTime(time);
+  _timeReceived = true;
+}
+
+// Check sensors every hour.
+void checkSensors(){
+  
+}
+
+
+void init_irrigation(){
+  // Leave space for MySensors eeprom.
+  int eeprom_start = EEPROM_LOCAL_CONFIG_ADDRESS + 255;
+  _eeprom_start_addr = eeprom_start;
+  EEPROM.setMaxAllowedWrites(4096);
+  EEPROM.setMemPool(eeprom_start, EEPROMSizeMega);  // TODO this line may not be needed.
+  uint8_t stored_version = EEPROM.readByte(IRR_EEPROM_VERSION + _eeprom_start_addr);
+  if (stored_version == 0 || stored_version == 255){
+    defaultReset();
+  }
+  // Load initial settings from EEPROM into memory.
+  initSettingsConfig();
+  initScheduleConfig();
+  initZoneConfig();
+}
+
 void setup(){
   _is_bootup = 1;
   init_irrigation();
@@ -331,32 +365,5 @@ void loop(){
   }
 }
 
-// receive time from Controller.
-void receiveTime(unsigned long time) {
-  setTime(time);
-  _timeReceived = true;
-}
-
-// Check sensors every hour.
-void checkSensors(){
-  
-}
-
-
-void init_irrigation(){
-  // Leave space for MySensors eeprom.
-  int eeprom_start = EEPROM_LOCAL_CONFIG_ADDRESS + 255;
-  _eeprom_start_addr = eeprom_start;
-  EEPROM.setMaxAllowedWrites(4096);
-  EEPROM.setMemPool(eeprom_start, EEPROMSizeMega);  // TODO this line may not be needed.
-  uint8_t stored_version = EEPROM.readByte(IRR_EEPROM_VERSION + _eeprom_start_addr);
-  if (stored_version == 0 || stored_version == 255){
-    defaultReset();
-  }
-  // Load initial settings from EEPROM into memory.
-  initSettingsConfig();
-  initScheduleConfig();
-  initZoneConfig();
-}
 
 

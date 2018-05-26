@@ -107,6 +107,9 @@ void initializeMenu(){
   // Zone Selector
   bitSet(menuBits[menuScheduleZones], menuBitInputZones);
 
+  // Run Some Zone Time Selector
+  bitSet(menuBits[menuRunSomeZones], menuBitRunSomeZones);
+  
   // Action item
   bitSet(menuBits[menuBlowoutZones], menuBitIsAction);
 }
@@ -139,7 +142,14 @@ void menuLevelEnter (uint8_t val){
         menuNumVal = 1; 
       }
       if (bitRead(menuBits[menuLevel], menuBitInputZones)){
-        menuNumVal = 1; 
+        menuNumVal = 1;
+      }
+      if (bitRead(menuBits[menuLevel], menuBitRunSomeZones)){
+        menuNumVal = 1;
+        menuPosition = 1; // Track which zone we are setting
+        for (uint8_t z=0; z<= MAX_NUM_ZONES; z++ ){
+          _manual_zones_time[z] = 0;
+        }
       }
       if (bitRead(menuBits[menuLevel], menuBitIsNumList)){
         menuListVal = 1;
@@ -228,6 +238,8 @@ void checkButtonPress(){
       navigateDaySchedule();
     } else if (bitRead(menuBits[menuLevel], menuBitInputZones)){
       navigateZonesSelector();
+    } else if (bitRead(menuBits[menuLevel], menuBitRunSomeZones)){
+      navigateRunZonesSelector();
     }
     
     updateDisplay();
@@ -342,10 +354,36 @@ void navigateZonesSelector(){
   if (btnCurrent == btnLeft){
     menuLevelExit();
   }
-  if (btnCurrent == btnSelect || btnCurrent == btnRight){
+  if (btnCurrent == btnRight || btnCurrent == btnSelect){
     bool new_val = ! schedule_water_zone(menuNumVal);
     set_schedule_water_zone((uint16_t)menuNumVal, new_val);
   }
+}
+
+// TODO up down add/subtract time.  left/right through zones.
+void navigateRunZonesSelector(){
+  if (btnCurrent == btnDown && _manual_zones_time[menuPosition] > 1){
+      _manual_zones_time[menuPosition] -= 1;
+  }
+  if ( btnCurrent == btnUp && _manual_zones_time[menuPosition] < 254 ){
+      _manual_zones_time[menuPosition] += 1;
+  }
+  if (btnCurrent == btnLeft){
+    if(menuPosition > 1){
+      menuPosition -= 1;
+    } else {
+      menuLevelExit();
+    }
+  }
+  if (btnCurrent == btnRight){
+    if ( menuPosition < _num_zones ){
+      menuPosition += 1;
+    }
+  }
+  if (btnCurrent == btnSelect){
+    _manual_zones_running = 1;
+    menuLevelExit();
+  }  
 }
 
 // Navigate zone name
@@ -458,8 +496,6 @@ void navigateTime(){
   if (tmpTime < 0){
     tmpTime += (24*60);
   }
-  Serial.print("menuNumVal:"); Serial.println(menuNumVal);
-  Serial.print("tmpTime:"); Serial.println(tmpTime);
   menuNumVal = (uint16_t)tmpTime;
   if (btnCurrent == btnLeft){
     menuPosition -= 1;
@@ -598,7 +634,6 @@ void updateDisplay(){
       pm = true;
     }
     char num[3];
-    Serial.print("menuHour:"); Serial.println(menuHour);
     itoa(menuHour, num, 10);
     if ( menuHour < 10 ){
       strcpy(line2, " ");
@@ -607,7 +642,6 @@ void updateDisplay(){
       strcpy(line2,num);
     }
     strcat(line2,":");
-    Serial.print("menuMinute:"); Serial.println(menuMinute);
     itoa(menuMinute, num, 10);
     if ( menuMinute < 10 ){
       strcat(line2, "0");
