@@ -147,7 +147,7 @@ void menuLevelEnter (uint8_t val){
       if (bitRead(menuBits[menuLevel], menuBitRunSomeZones)){
         menuNumVal = 1;
         menuPosition = 1; // Track which zone we are setting
-        for (uint8_t z=0; z<= MAX_NUM_ZONES; z++ ){
+        for (uint8_t z=0; z < MAX_NUM_ZONES; z++ ){
           _manual_zones_time[z] = 0;
         }
       }
@@ -362,11 +362,11 @@ void navigateZonesSelector(){
 
 // TODO up down add/subtract time.  left/right through zones.
 void navigateRunZonesSelector(){
-  if (btnCurrent == btnDown && _manual_zones_time[menuPosition] > 1){
-      _manual_zones_time[menuPosition] -= 1;
+  if (btnCurrent == btnDown && _manual_zones_time[menuPosition - 1] > 1){
+      _manual_zones_time[menuPosition - 1] -= 1;
   }
-  if ( btnCurrent == btnUp && _manual_zones_time[menuPosition] < 254 ){
-      _manual_zones_time[menuPosition] += 1;
+  if ( btnCurrent == btnUp && _manual_zones_time[menuPosition - 1] < 254 ){
+      _manual_zones_time[menuPosition - 1] += 1;
   }
   if (btnCurrent == btnLeft){
     if(menuPosition > 1){

@@ -134,7 +134,7 @@ void set_number_of_zones(uint16_t num){
     num = MAX_NUM_ZONES;
   }
   _num_zones = num;
-  EEPROM.writeByte(IRR_NUM_ZONES + _eeprom_start_addr, val);
+  EEPROM.updateByte(IRR_NUM_ZONES + _eeprom_start_addr, num);
 }
 
 void set_master_pin(uint16_t val){
@@ -142,7 +142,7 @@ void set_master_pin(uint16_t val){
     val = 255;
   }
   _master_valve_pin = val;
-  EEPROM.writeByte(IRR_MASTER_VALVE_PIN + _eeprom_start_addr, val);
+  EEPROM.updateByte(IRR_MASTER_VALVE_PIN + _eeprom_start_addr, val);
 }
 
 void set_rain_pin(uint16_t val){

@@ -46,7 +46,24 @@ void checkSchedule(){
   if ( second() == 0 && minute() == 0 && hour() == 0 ){
     initScheduleConfig();
   }
-  // Nothing is running check start times.
+  // Manual run zones.
+  if ( _current_running_zone == 0 && _manual_zones_running >= 1 ){
+    bool found_zone = false;
+    for ( uint8_t zone = 1; zone <= _num_zones; zone++ ){
+      if (_manual_zones_time[zone - 1] > 0 ){
+        found_zone = true;
+        _manual_zones_running = zone;
+        _systemState = stateRunningSomeZones;
+        loadZoneConfig(_manual_zones_running);
+        water_on();
+      }
+    }
+    if ( found_zone == false ){
+      _manual_zones_running = 0;
+      _systemState = stateOff;
+    }
+  }
+  // Nothing running check schedule start times.
   if (_current_running_zone == 0 && _current_running_scedule == 0 && _manual_zones_running == 0){
     // Loop through all schedules to check next run times.
     int current = hour() * 60 + minute();
@@ -60,14 +77,8 @@ void checkSchedule(){
     }
   }
   // Zone is done schedule is running so find next zone to run
-  if (_current_running_zone == 0 && _current_running_scedule >= 1 ){
+  if (_current_running_zone == 0 && _current_running_scedule >= 1 && _manual_zones_running == 0 ){
     runSchedule(_current_running_scedule);
-  }
-  // Manual run zones.
-  if ( _manual_zones_running >= 1 ){
-    if(_current_running_zone == 0){
-      loadZoneConfig(_manual_zones_running);   // TODO
-    }
   }
 }
 

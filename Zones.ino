@@ -43,8 +43,8 @@ void resetZoneConfig(){
   }  
 }
 
-void resetZone(int num, bool force){
-  _zone_number = num;
+void resetZone(int zone_num, bool force){
+  _zone_number = zone_num;
   set_zone_eeprom_offset();
   _zone_storebits = 0;
   set_zone_is_enabled(0); // Saves _zone_storebits.
@@ -54,9 +54,9 @@ void resetZone(int num, bool force){
   // Fill in default "Zone 1 " "Zone 2 " including trailing whitespace
   strcpy(_zone_name, "Zone ");
   char num[3];
-  itoa(i, num, 10);
+  itoa(zone_num, num, 10);
   strcat(_zone_name, num);
-  if (i <= 9){
+  if (zone_num <= 9){
     strcat(_zone_name, " ");
   }
   //Fill in rest of bits with " " whitespace.
@@ -87,10 +87,11 @@ void water_on(){
   _current_running_zone = _zone_number;
   _zone_timer_start = _currentMillis;
   if ( _manual_zones_running >= 1 ){
-    _zone_timer_end = _manual_zones_time[_zone_number] * 60 * 1000; // Manual Run
+    _zone_timer_end = _manual_zones_time[_zone_number - 1] * 60 * 1000; // Manual Run
   } else {
     _zone_timer_end = _zone_run_time * 60 * 1000; // Schedule Run
   }
+  // TODO Master Valve
   if(_zone_pin >= 1){
     if (zone_normally_open()){
       digitalWrite(_zone_pin, HIGH);
@@ -102,7 +103,7 @@ void water_on(){
 
 void water_off(){
   _current_running_zone = 0;
-  _manual_zones_time[_zone_number] = 0;
+  _manual_zones_time[_zone_number - 1] = 0;
   if(_zone_pin >= 1){
     if (zone_normally_open()){
       digitalWrite(_zone_pin, LOW);
@@ -113,7 +114,7 @@ void water_off(){
 }
 
 void run_all_zones(void){
-  // TODO
+  // TODO - me think this is now part of schedule as run schedule. Not needed?
   _systemState = stateRunningAllZones;
   for (uint8_t zone_num = 0; zone_num <= _num_zones; zone_num++ ){
     loadZoneConfig(zone_num);
@@ -138,9 +139,15 @@ void blowout_zones(void){
 
 // Safety - call this function to ensure zones are off.
 void all_zones_off(){
-  if ( _current_running_zone == 0 ){
-    // TODO - loop through all zone pins and turn them off.
+  for ( uint8_t zone=1; zone <= _num_zones; zone++ ){
+    loadZoneConfig(zone);
+    water_off();
   }
+  _manual_zones_running = 0;
+  _current_running_zone = 0;
+  _current_running_scedule = 0;
+  _systemState = stateOff;
+  // TODO master valve off.
 }
 
 void checkZoneTimer(){
